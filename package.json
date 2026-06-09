@@ -1,15 +1,43 @@
 {
   "name": "cctranslate",
   "version": "0.1.0",
-  "private": true,
-  "description": "Hotkey bilingual (EN->ZH) overlay for Claude Code conversation output. Reads the live session transcript (sidecar), translates via a separate cheap backend, and shows interleaved EN/ZH in a tmux popup. Non-destructive, zero history pollution, zero main-loop tokens.",
+  "description": "Bilingual inline translation overlay for Claude Code: a translated line (zh/ja/ko/ru/hi) under each English line, right in the conversation — non-destructive, zero main-loop tokens.",
+  "license": "MIT",
+  "author": "Roy Jiang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roy-jiang-opus/cctranslate.git"
+  },
+  "homepage": "https://github.com/roy-jiang-opus/cctranslate#readme",
+  "bugs": {
+    "url": "https://github.com/roy-jiang-opus/cctranslate/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "translation",
+    "bilingual",
+    "i18n",
+    "terminal",
+    "hook",
+    "chinese",
+    "japanese",
+    "korean"
+  ],
   "bin": {
     "tt": "bin/tt.js"
   },
+  "files": [
+    "bin/",
+    "hook/",
+    "src/",
+    "README*.md",
+    "ROADMAP.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/smoke.js"
+    "test": "node test/fence.js"
   }
 }
