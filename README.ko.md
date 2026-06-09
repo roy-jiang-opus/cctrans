@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-Hans.md) | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | **한국어** | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
+[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+
 Claude Code에 **이중 언어 오버레이**를 추가합니다: 모든 응답에서 원본 영어 줄 아래에 번역(중/일/한/러/힌디)이 한 줄씩, **대화 안에 그대로** 표시됩니다.
 
 ```
@@ -132,3 +134,7 @@ cctrans lang zh-Hans  # 간체 중국어 (기본)
 ```bash
 node bin/cctrans.js uninstall    # 훅 제거; Claude Code 재시작으로 반영
 ```
+
+## 라이선스
+
+[MIT](LICENSE) © Roy Jiang

@@ -2,6 +2,8 @@
 
 **English** | [简体中文](README.zh-Hans.md) | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
+[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+
 A **bilingual overlay** for Claude Code: every reply gets a translated line (Chinese / Japanese / Korean / Russian / Hindi) under each original English line, **right in the conversation**.
 
 ```
@@ -132,3 +134,7 @@ Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chine
 ```bash
 node bin/cctrans.js uninstall    # removes the hook; restart Claude Code to take effect
 ```
+
+## License
+
+[MIT](LICENSE) © Roy Jiang

@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-Hans.md) | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | **Русский** | [हिन्दी](README.hi.md)
 
+[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+
 **Двуязычный оверлей** для Claude Code: в каждом ответе под каждой строкой оригинального английского текста появляется строка перевода (китайский / японский / корейский / русский / хинди) — **прямо в диалоге**.
 
 ```
@@ -133,3 +135,7 @@ cctrans lang zh-Hans  # упрощённый китайский (по умолч
 ```bash
 node bin/cctrans.js uninstall    # удаляет хук; вступает в силу после перезапуска Claude Code
 ```
+
+## Лицензия
+
+[MIT](LICENSE) © Roy Jiang

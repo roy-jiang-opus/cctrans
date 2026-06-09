@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-Hans.md) | **繁體中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
+[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+
 為 Claude Code 加上一層**雙語對照**:每則回覆會在原始英文行下方自動補上一行譯文(中/日/韓/俄/印地),**就在對話裡**,一行英文一行譯文。
 
 ```
@@ -132,3 +134,7 @@ cctrans lang zh-Hans  # 簡體中文(預設)
 ```bash
 node bin/cctrans.js uninstall    # 移除鉤子;重新啟動 Claude Code 生效
 ```
+
+## 授權條款
+
+[MIT](LICENSE) © Roy Jiang

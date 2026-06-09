@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-Hans.md) | [繁體中文](README.zh-Hant.md) | **日本語** | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
+[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+
 Claude Code に**バイリンガル表示**を追加:すべての返信で、元の英語行の下に訳文(中/日/韓/露/ヒンディー)が一行ずつ、**会話の中にそのまま**表示されます。
 
 ```
@@ -132,3 +134,7 @@ cctrans lang zh-Hans  # 簡体字中国語(デフォルト)
 ```bash
 node bin/cctrans.js uninstall    # フックを削除;Claude Code の再起動で反映
 ```
+
+## ライセンス
+
+[MIT](LICENSE) © Roy Jiang
