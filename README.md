@@ -1,10 +1,20 @@
+<div align="center">
+
 # cctrans
+
+**Read Claude Code in your language — pay tokens in English.**
+
+[![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
+[![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
+[![GitHub stars](https://img.shields.io/github/stars/roy-jiang-opus/cctrans?style=flat&logo=github)](https://github.com/roy-jiang-opus/cctrans)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![node](https://img.shields.io/node/v/cctrans)](package.json)
 
 **English** | [简体中文](README.zh-Hans.md) | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
-[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+</div>
 
-A **bilingual overlay** for Claude Code: every reply gets a translated line (Chinese / Japanese / Korean / Russian / Hindi) under each original English line, **right in the conversation**.
+---
 
 ```
 ● I will refactor the auth module to use async tokens.
@@ -13,11 +23,41 @@ A **bilingual overlay** for Claude Code: every reply gets a translated line (Chi
   ↳ 这涉及 3 个文件并添加重试层。
 ```
 
-- **Non-destructive**: the translation only appears on screen — the transcript and the model's context **stay pure English**, so skills, docs, and code are unaffected.
-- **No history pollution, no main-loop tokens**: translation runs through a **separate cheap backend**, completely outside your Claude Code session.
-- **One-key toggle**: on by default; switch it off instantly when you want plain English.
+A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese / Korean / Russian / Hindi) under each English line, **right in the conversation** — display-only, so the transcript, the model's context, and your token bill stay 100% English.
 
-## Why
+## ✨ Features
+
+- 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
+- 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
+- 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
+- ⌨️ **Input translation** — type prompts in your language; the model works from English (`cctrans input on`)
+- 🌏 **6 target languages** — `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
+- 🔌 **6 backends with auto-fallback** — OpenAI / Anthropic / DeepL / Azure / free Google / your own Claude subscription
+- 🔒 **Key isolation** — API keys live only in a chmod-600 file; shell env vars are never read
+- 🛟 **Fail-safe** — any error or timeout falls back to plain English; it never blocks your session
+
+## 🚀 Quick start
+
+```bash
+npm install -g cctrans && cctrans install
+```
+
+The install registers the hooks and walks you through setup (language → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
+
+<details>
+<summary>Install from source</summary>
+
+```bash
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
+node bin/cctrans.js install
+```
+
+Requires `~/.local/bin` on your PATH, or use an alias: `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
+
+</details>
+
+## 🤔 Why
 
 Two problems, one architecture:
 
@@ -35,7 +75,7 @@ Anthropic's tracking issue for language-adjusted limits ([#26401](https://github
 
 Full research notes with sources: [MOTIVATION.md](MOTIVATION.md).
 
-## How it works
+## ⚙️ How it works
 
 Built on Claude Code's native **`MessageDisplay` hook** (v2.1.152+): it fires while each assistant message renders, handing the hook each completed text chunk (`delta`); the `displayContent` the hook returns **replaces the on-screen rendering only**, never the stored message.
 
@@ -52,23 +92,7 @@ Claude streams English
 
 > Verified on CC 2.1.169: deltas are **non-overlapping** completed chunks (not accumulated text), a plain `\n` renders the two languages on separate lines, and code blocks / paths / already-translated lines are skipped automatically.
 
-## Install
-
-```bash
-npm install -g cctrans && cctrans install
-
-# from source:
-git clone https://github.com/roy-jiang-opus/cctrans.git
-cd cctrans
-node bin/cctrans.js install      # registers the hooks, links cctrans into ~/.local/bin, then runs the setup wizard
-```
-
-Then **restart Claude Code** (new session) so the hook loads. Send any message — replies become bilingual.
-
-> Requires `~/.local/bin` on your PATH; otherwise use an alias:
-> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
-
-## Usage
+## 🎛 Commands
 
 | Command | What it does |
 |---------|--------------|
@@ -82,11 +106,9 @@ Then **restart Claude Code** (new session) so the hook loads. Send any message �
 | `cctrans input on` / `cctrans input off` | translate non-English input to English (sent as context) |
 | `cctrans last [N]` | translate the latest (or N-back) reply to the terminal |
 | `cctrans test <text>` | translate ad-hoc text to verify the engine |
-| `cctrans install` / `cctrans uninstall` | register / remove the hook |
+| `cctrans install` / `cctrans uninstall` | register / remove the hooks |
 
-**Fastest toggle**: type `!cctrans off` or `!cctrans on` inside Claude Code's input box (`!` is CC's built-in bash mode — no model call, no tokens).
-
-## Translation backends
+## 🌐 Translation backends
 
 | Backend | Requires | Speed | Quality | Notes |
 |---------|----------|-------|---------|-------|
@@ -103,7 +125,7 @@ API keys live **only** in `~/.cc-translate/keys.json` (chmod 600) — set them w
 
 All other settings (backend, language, marker, models, Azure endpoint) live in `~/.cc-translate/state.json` — change them via `cctrans` commands or edit the file directly.
 
-## Languages
+## 🗣 Languages
 
 Target languages cover **CJK + Russian + Hindi** (non-Latin scripts, so "this line is already in the target language" can be detected for free via Unicode ranges and skipped):
 
@@ -118,23 +140,25 @@ cctrans lang zh-Hans  # Simplified Chinese (default)
 
 Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chinese is a script, not a region; `zh-CN` / `zh-TW` are accepted as aliases and normalized. Switching takes effect immediately (the hook re-reads state on every call); each language has its own cache.
 
-## Input translation
+## ⌨️ Input translation
 
 `cctrans input on` enables a `UserPromptSubmit` hook: when your prompt is mostly non-English, an English translation is attached as context the model treats as the canonical instruction — you keep typing in your language, the model works in English. (Verified on CC 2.1.169: hooks cannot rewrite the prompt itself, so the original stays in history with the English alongside.) English prompts pass through untouched; any error falls back to sending your prompt as-is.
 
-## Behavior & limits (verified)
+## 📏 Behavior & limits (verified)
 
 - The hook fires **per chunk during streaming**; each chunk is translated and replaced in place — translations appear progressively alongside the English.
 - The hook has a **10-second** timeout; this tool guards at 9s internally. Any error / timeout / oversized chunk (>9,000 chars) **falls back safely to the original English** — it never stalls the session.
 - Every translated line is **cached** by content hash (`~/.cc-translate/cache`); repaints and repeated text cost nothing.
 - With `openai`, each chunk is roughly one API call (~$0.0001) and adds about 1s of latency vs. plain English; `google` is faster with slightly lower quality.
 
-## Uninstall
+## 🔗 Stay in the loop
 
-```bash
-node bin/cctrans.js uninstall    # removes the hook; restart Claude Code to take effect
-```
+- ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans) to get release updates
+- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · upgrade with `npm update -g cctrans`
+- 🗺 **Roadmap** — [ROADMAP.md](ROADMAP.md): what's shipped, what's next
+- 📚 **Research** — [MOTIVATION.md](MOTIVATION.md): the non-English token-tax data behind this project
+- 🐛 **Issues / language requests** — [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)
 
-## License
+## 📄 License
 
 [MIT](LICENSE) © Roy Jiang

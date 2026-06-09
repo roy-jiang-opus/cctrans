@@ -1,10 +1,20 @@
+<div align="center">
+
 # cctrans
+
+**用母语读 Claude Code——token 按英文计费。**
+
+[![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
+[![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
+[![GitHub stars](https://img.shields.io/github/stars/roy-jiang-opus/cctrans?style=flat&logo=github)](https://github.com/roy-jiang-opus/cctrans)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![node](https://img.shields.io/node/v/cctrans)](package.json)
 
 [English](README.md) | **简体中文** | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
-[![npm](https://img.shields.io/npm/v/cctrans)](https://www.npmjs.com/package/cctrans) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/node/v/cctrans)](package.json)
+</div>
 
-给 Claude Code 加一层**双语对照**:每条回复在原始英文行下面自动补一行译文(中/日/韩/俄/印地),**就在对话里**,一行英文一行译文。
+---
 
 ```
 ● I will refactor the auth module to use async tokens.
@@ -13,11 +23,41 @@
   ↳ 这涉及 3 个文件并添加重试层。
 ```
 
-- **非破坏**:屏幕上多了译文,但转录文件和模型看到的上下文**仍是纯英文**——技术文档、skills、代码都不受影响。
-- **不污染历史、不耗主对话 token**:翻译由一个**独立的便宜后端**完成,跟你的 Claude Code 会话完全无关。
-- **一个键开关**:默认常开;读纯英文/代码时一键关掉。
+给 Claude Code 加一层**双语对照**:每行英文下面一行译文(中/日/韩/俄/印地),**就在对话里**——仅作显示,转录、模型上下文和你的 token 账单 100% 保持英文。
 
-## 为什么做这个
+## ✨ 特性
+
+- 🪞 **行内双语显示** —— 译文随回复流式出现在每行英文下方,就在对话里
+- 🧾 **非破坏** —— 转录与模型上下文保持纯英文;skills、文档、代码不受影响
+- 🆓 **主对话零 token** —— 翻译走独立便宜后端(也有免费选项),完全在 Claude Code 会话之外
+- ⌨️ **输入翻译** —— 用母语打字,模型按英文工作(`cctrans input on`)
+- 🌏 **6 种目标语言** —— `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
+- 🔌 **6 个后端自动降级** —— OpenAI / Anthropic / DeepL / Azure / 免费 Google / 你自己的 Claude 订阅
+- 🔒 **密钥隔离** —— API key 只存在 chmod-600 的文件里,从不读终端环境变量
+- 🛟 **故障安全** —— 任何错误或超时都回退为纯英文,绝不卡住会话
+
+## 🚀 快速开始
+
+```bash
+npm install -g cctrans && cctrans install
+```
+
+安装会注册钩子并引导你完成配置(语言 → 后端 → API key → 实时验证)。然后**重启 Claude Code**——回复变成双语。随时在 Claude Code 输入框里输入 `!cctrans off` / `!cctrans on` 开关(`!` 是 CC 内置 bash 模式,不调用模型、不花 token)。
+
+<details>
+<summary>从源码安装</summary>
+
+```bash
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
+node bin/cctrans.js install
+```
+
+需要 `~/.local/bin` 在 PATH 里,或用别名:`alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
+
+</details>
+
+## 🤔 为什么做这个
 
 两个痛点,一个架构解决:
 
@@ -35,7 +75,7 @@ Anthropic 关于按语言调整额度的 issue([#26401](https://github.com/anthr
 
 完整调研数据与来源:[MOTIVATION.md](MOTIVATION.md)。
 
-## 工作原理
+## ⚙️ 工作原理
 
 利用 Claude Code 原生的 **`MessageDisplay` 钩子**(v2.1.152+):它在每条助手消息渲染时触发,把完成的文本片段(`delta`)交给钩子;钩子返回的 `displayContent` **替换屏幕显示**,但不改变存储的消息。
 
@@ -52,23 +92,7 @@ Claude 流式输出英文
 
 > 已在 CC 2.1.169 实测:`delta` 是**互不重叠**的已完成片段(不是累积文本),普通 `\n` 即可让两种语言分行显示,代码块/路径/已是目标语言的行自动跳过。
 
-## 安装
-
-```bash
-npm install -g cctrans && cctrans install
-
-# from source:
-git clone https://github.com/roy-jiang-opus/cctrans.git
-cd cctrans
-node bin/cctrans.js install      # 注册钩子、链接 cctrans 到 ~/.local/bin,然后运行 setup 向导
-```
-
-然后**重启 Claude Code**(开新会话)让钩子生效。发任意消息,回复就会双语对照。
-
-> 需要 `~/.local/bin` 在 PATH 里;否则用别名:
-> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
-
-## 使用
+## 🎛 命令
 
 | 命令 | 作用 |
 |------|------|
@@ -84,9 +108,7 @@ node bin/cctrans.js install      # 注册钩子、链接 cctrans 到 ~/.local/bi
 | `cctrans test <文本>` | 翻译一段文本,验证引擎 |
 | `cctrans install` / `cctrans uninstall` | 注册 / 移除钩子 |
 
-**最快的开关方式**:在 Claude Code 输入框里直接输入 `!cctrans off` 或 `!cctrans on`(`!` 是 CC 的内置 bash 模式,不调用模型、不花 token)。
-
-## 翻译后端
+## 🌐 翻译后端
 
 | 后端 | 前提 | 速度 | 质量 | 说明 |
 |------|------|------|------|------|
@@ -103,7 +125,7 @@ API key **只**存放在 `~/.cc-translate/keys.json`(chmod 600)——用 `cctran
 
 其余设置(后端、语言、标记、模型、Azure 端点)都在 `~/.cc-translate/state.json` 里——用 `cctrans` 命令修改或直接编辑文件。
 
-## 多语言
+## 🗣 多语言
 
 目标语言支持 **CJK + 俄语 + 印地语**(非拉丁文字,可按 Unicode 区间零成本判断"该行已是目标语言"并跳过):
 
@@ -118,23 +140,25 @@ cctrans lang zh-Hans  # 简体中文(默认)
 
 中文采用 BCP-47 **文字码**(`zh-Hans`/`zh-Hant`)——繁体是文字系统而非地区;`zh-CN` / `zh-TW` 仍可作为别名使用,会自动归一化。切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
 
-## 输入翻译
+## ⌨️ 输入翻译
 
 `cctrans input on` 启用 `UserPromptSubmit` 钩子:当你的输入大部分是非英文时,英文译文会作为上下文附给模型并被视为权威指令——你继续用母语打字,模型按英文工作。(已在 CC 2.1.169 核实:钩子无法改写 prompt 本身,所以原文仍在历史里,英文随附。)英文输入原样通过;任何错误都安全回退为原样发送。
 
-## 行为与限制(已核实)
+## 📏 行为与限制(已核实)
 
 - 钩子在**流式输出中**按片段触发,每段单独翻译并就地替换——所以译文会随英文逐段出现。
 - 钩子有 **10 秒**超时;本工具内部 9 秒兜底。任何错误/超时/超长(>9000 字符)都会**安全回退成原始英文**,绝不卡住会话。
 - 每行译文按内容哈希**缓存**(`~/.cc-translate/cache`),重绘和重复文本零成本。
 - 用 `openai` 时每段约一次 API 调用(~$0.0001),流式输出会比纯英文多约 1 秒/段的延迟;`google` 更快但质量略低。
 
-## 卸载
+## 🔗 关注项目
 
-```bash
-node bin/cctrans.js uninstall    # 移除钩子;重启 Claude Code 生效
-```
+- ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans),第一时间获取版本更新
+- 📦 **npm** —— [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · 升级:`npm update -g cctrans`
+- 🗺 **路线图** —— [ROADMAP.md](ROADMAP.md):已完成与计划中的功能
+- 📚 **调研** —— [MOTIVATION.md](MOTIVATION.md):本项目背后的非英语 token 税数据
+- 🐛 **Issue / 新语言请求** —— [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)
 
-## 许可证
+## 📄 许可证
 
 [MIT](LICENSE) © Roy Jiang
