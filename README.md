@@ -35,7 +35,10 @@ Claude streams English
 ## Install
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # registers the hooks, links tt into ~/.local/bin, then runs the setup wizard
 ```

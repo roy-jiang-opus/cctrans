@@ -35,7 +35,10 @@ Claude अंग्रेज़ी स्ट्रीम करता है
 ## इंस्टॉल
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # हुक पंजीकृत करता है, tt को ~/.local/bin में लिंक करता है, फिर setup विज़ार्ड चलाता है
 ```

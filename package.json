@@ -1,5 +1,5 @@
 {
-  "name": "cctranslate",
+  "name": "cctrans",
   "version": "0.1.0",
   "description": "Bilingual inline translation overlay for Claude Code: a translated line (zh/ja/ko/ru/hi) under each English line, right in the conversation — non-destructive, zero main-loop tokens.",
   "license": "MIT",

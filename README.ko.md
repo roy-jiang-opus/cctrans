@@ -35,7 +35,10 @@ Claude가 영어를 스트리밍 출력
 ## 설치
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # 훅 등록, tt를 ~/.local/bin에 링크 후 setup 마법사 실행
 ```

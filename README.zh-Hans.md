@@ -35,7 +35,10 @@ Claude 流式输出英文
 ## 安装
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # 注册钩子、链接 tt 到 ~/.local/bin,然后运行 setup 向导
 ```

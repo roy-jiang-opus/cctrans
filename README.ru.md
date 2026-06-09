@@ -36,7 +36,10 @@ Claude стримит английский текст
 ## Установка
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # регистрирует хуки, линкует tt в ~/.local/bin, затем запускает мастер настройки
 ```

@@ -35,7 +35,10 @@ Claude 串流輸出英文
 ## 安裝
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # 註冊鉤子、連結 tt 到 ~/.local/bin,然後執行 setup 精靈
 ```

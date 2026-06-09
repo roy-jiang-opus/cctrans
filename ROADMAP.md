@@ -15,4 +15,4 @@ Keys live **only** in `~/.cc-translate/keys.json` (chmod 600, atomic writes), ma
 
 - **Latin-script output targets** (e.g. English, Spanish): the current "already in target language" skip detection relies on Unicode script ranges, which can't separate Latin-script targets from English source; needs a stopword-heuristic detector. (`en` is already wired internally for the input direction.)
 - **Glossary / terminology pinning**: force consistent translations for project-specific terms across all backends.
-- **npm publish** as `cctranslate` (name verified available).
+- ~~npm publish~~ → **shipped as `cctrans`** (npm's typosquat rule blocks `cctranslate` — too similar to the existing `cc-translate`).

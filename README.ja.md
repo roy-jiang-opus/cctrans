@@ -35,7 +35,10 @@ Claude が英語をストリーミング出力
 ## インストール
 
 ```bash
-git clone git@github.com:roy-jiang-opus/cctranslate.git
+npm install -g cctrans && tt install
+
+# from source:
+git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
 node bin/tt.js install      # フック登録・tt を ~/.local/bin にリンク後、setup ウィザードを実行
 ```
