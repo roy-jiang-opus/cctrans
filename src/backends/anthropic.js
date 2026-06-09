@@ -40,7 +40,7 @@ module.exports = {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: opts.anthropicModel || process.env.TT_ANTHROPIC_MODEL || 'claude-haiku-4-5',
+        model: opts.anthropicModel || require('../config').getState().anthropicModel,
         max_tokens: 4096,
         system: sys,
         output_config: { format: { type: 'json_schema', schema: SCHEMA } },

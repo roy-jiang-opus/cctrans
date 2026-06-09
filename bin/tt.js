@@ -112,7 +112,7 @@ function status() {
   const installed = hookInstalled();
   const b = getBackend(st.backend);
   const lang = getLang(st.target);
-  console.log(C.bold('terminal-translate status'));
+  console.log(C.bold('cctranslate status'));
   console.log('  enabled : ' + (st.enabled ? C.green('ON') : C.red('OFF')));
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: tt install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
@@ -125,15 +125,15 @@ function status() {
 function keyCmd(rest) {
   const [id, value] = rest;
   if (!id) {
-    console.log(C.bold('keys') + C.dim('  (' + keys.KEYS_FILE + ', chmod 600; generic env keys ignored unless useEnvKeys)'));
-    for (const kid of Object.keys(keys.KEY_IDS)) {
-      const src = keys.keySource(kid);
-      console.log('  ' + kid.padEnd(14) + (src ? C.green(keys.mask(keys.getKey(kid))) + C.dim('  from ' + src) : C.dim('(unset)')));
+    console.log(C.bold('keys') + C.dim('  (' + keys.KEYS_FILE + ', chmod 600 — the only key source; env vars are never read)'));
+    for (const kid of keys.KEY_IDS) {
+      const v = keys.getKey(kid);
+      console.log('  ' + kid.padEnd(14) + (v ? C.green(keys.mask(v)) : C.dim('(unset)')));
     }
     return;
   }
-  if (!keys.KEY_IDS[id]) { console.error('unknown key id: ' + id + '\nvalid: ' + Object.keys(keys.KEY_IDS).join(', ')); process.exit(1); }
-  if (!value) { console.log(id + ' = ' + keys.mask(keys.getKey(id)) + C.dim('  (source: ' + (keys.keySource(id) || 'none') + ')')); return; }
+  if (!keys.KEY_IDS.includes(id)) { console.error('unknown key id: ' + id + '\nvalid: ' + keys.KEY_IDS.join(', ')); process.exit(1); }
+  if (!value) { console.log(id + ' = ' + keys.mask(keys.getKey(id))); return; }
   if (value === '--clear') { keys.setKey(id, null); console.log(C.green('✓') + ' cleared ' + id); return; }
   keys.setKey(id, value);
   console.log(C.green('✓') + ' ' + id + ' = ' + keys.mask(value) + C.dim('  saved to ' + keys.KEYS_FILE));
@@ -188,7 +188,7 @@ ${C.bold('Control')}
 ${C.bold('Setup')}
   tt install                register hooks (+ link tt), then run setup
   tt setup                  interactive wizard: language, backend, API keys
-                            (flags: --lang --backend --key --import-env --yes)
+                            (flags: --lang --backend --key --yes)
   tt key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
   tt uninstall              remove the hooks
@@ -242,7 +242,6 @@ async function main() {
         lang: flag('--lang'),
         backend: flag('--backend'),
         key: flag('--key'),
-        importEnv: rest.includes('--import-env'),
         yes: rest.includes('--yes'),
       });
       break;

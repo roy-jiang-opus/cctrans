@@ -76,9 +76,9 @@ node bin/tt.js install      # フック登録・tt を ~/.local/bin にリンク
 
 プライマリが失敗/タイムアウトすると自動的に **google にフォールバック**——セッションが止まることはありません。訳文は「バックエンド+言語+内容」のハッシュでキャッシュされます。
 
-API キーは `~/.cc-translate/keys.json`(chmod 600)に保存し、`tt setup` か `tt key` で設定します——デフォルトではシェルの `OPENAI_API_KEY` などの環境変数を**読み取りません**。このツールのキーとターミナルのキーが互いに汚染されることはありません。`tt setup` は検出した環境変数キーのインポートを提案します;汎用環境変数の読み取りは `TT_USE_ENV_KEYS=1` でオプトイン、`TT_OPENAI_KEY` 形式の専用オーバーライドは常に有効です。
+API キーは `~/.cc-translate/keys.json`(chmod 600)**のみ**に保存されます——`tt setup` / `tt key` で設定するか、ファイルを直接編集してください。シェルの環境変数は一切読み取られないため、このツールのキーとターミナルのキーが互いに汚染されることはありません。
 
-環境変数:`TT_BACKEND`、`TT_TARGET`(デフォルト `zh-Hans`)、`TT_MARKER`(デフォルト `↳ `)、`TT_HOME`(デフォルト `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
+その他の設定(バックエンド、言語、マーカー、モデル、Azure エンドポイント)は `~/.cc-translate/state.json` にあります——`tt` コマンドで変更するか、ファイルを直接編集してください。
 
 ## 多言語
 

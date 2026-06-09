@@ -15,7 +15,7 @@ module.exports = {
     if (!key) throw new Error('no azure key');
     const lang = getLang(langCode);
     const target = lang ? lang.azure : langCode;
-    const endpoint = process.env.AZURE_TRANSLATOR_ENDPOINT || 'https://api.cognitive.microsofttranslator.com';
+    const endpoint = require('../config').getState().azureEndpoint;
     const headers = { 'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': key };
     const region = getKey('azure-region');
     if (region) headers['Ocp-Apim-Subscription-Region'] = region;

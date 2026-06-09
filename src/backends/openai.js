@@ -26,7 +26,7 @@ module.exports = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
       body: JSON.stringify({
-        model: opts.model || process.env.TT_OPENAI_MODEL || 'gpt-4o-mini',
+        model: opts.model || require('../config').getState().model,
         temperature: 0,
         response_format: { type: 'json_object' },
         messages: [

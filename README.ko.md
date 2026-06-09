@@ -76,9 +76,9 @@ node bin/tt.js install      # 훅 등록, tt를 ~/.local/bin에 링크 후 setup
 
 기본 백엔드가 실패/타임아웃하면 자동으로 **google로 폴백** — 세션이 멈추는 일은 없습니다. 모든 번역 줄은 "백엔드+언어+내용" 해시로 캐시됩니다.
 
-API 키는 `~/.cc-translate/keys.json`(chmod 600)에 저장되며 `tt setup` 또는 `tt key`로 설정합니다 — 기본적으로 셸의 `OPENAI_API_KEY` 같은 환경 변수를 **읽지 않으므로** 이 도구의 키와 터미널의 키가 서로 오염되지 않습니다. `tt setup`이 감지된 환경 변수 키의 가져오기를 제안합니다; 일반 환경 변수 읽기는 `TT_USE_ENV_KEYS=1`로 옵트인, `TT_OPENAI_KEY` 형식의 전용 오버라이드는 항상 동작합니다.
+API 키는 **오직** `~/.cc-translate/keys.json`(chmod 600)에만 저장됩니다 — `tt setup` / `tt key`로 설정하거나 파일을 직접 편집하세요. 셸 환경 변수는 절대 읽지 않으므로 이 도구의 키와 터미널의 키가 서로 오염되지 않습니다.
 
-환경 변수: `TT_BACKEND`, `TT_TARGET` (기본 `zh-Hans`), `TT_MARKER` (기본 `↳ `), `TT_HOME` (기본 `~/.cc-translate`), `TT_OPENAI_MODEL`, `TT_ANTHROPIC_MODEL`, `AZURE_TRANSLATOR_ENDPOINT`.
+나머지 설정(백엔드, 언어, 마커, 모델, Azure 엔드포인트)은 `~/.cc-translate/state.json`에 있습니다 — `tt` 명령으로 변경하거나 파일을 직접 편집하세요.
 
 ## 다국어
 

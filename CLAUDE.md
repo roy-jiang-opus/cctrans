@@ -24,7 +24,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
-- `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600); resolution keys.json → TT_* env → generic env only if useEnvKeys. Must NOT require config.js (config requires keys for the default backend).
+- `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600), the ONLY key source — env vars are never read. Must NOT require config.js (config requires keys for the default backend).
 - `src/setup.js` — interactive wizard (lang → key import → backend → key entry → live verify)
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`
 - `src/transcript.js` — find + parse session JSONL (used by `tt last`)
@@ -33,9 +33,12 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `keybindings.json` cannot run shell commands or toggle hooks → there is no true
   in-TUI hotkey. Toggle is a flag (`tt on/off`), fastest via `!tt off` inside CC.
 - MessageDisplay timeout is 10s; output cap ~10k chars. Keep per-delta work fast.
-- `UserPromptSubmit`/`UserPromptExpansion` output schemas (2.1.169 binary) allow only
-  `additionalContext` + block — hooks CANNOT rewrite the prompt. Input translation
-  therefore attaches the English as context; the original stays in history.
+- `UserPromptSubmit`/`UserPromptExpansion` output schemas (verified on 2.1.169 AND
+  2.1.170 binaries) allow only `additionalContext` + block — hooks CANNOT rewrite the
+  prompt. Input translation therefore attaches the English as context; the original
+  stays in history.
+- No user-facing env vars: settings in state.json, secrets in keys.json. Only internal
+  plumbing reads env (TT_HOME/TT_TRANSCRIPT for tests, TT_DISABLE/TT_DEBUG_STDIN in hooks).
 
 ## Testing
 - `node bin/tt.js test "<text>"` — engine only.

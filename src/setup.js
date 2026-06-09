@@ -46,17 +46,7 @@ async function runSetup(opts) {
     if (!getLang(lang)) { console.error(C.red('unsupported language: ' + lang)); return false; }
     lang = normalizeLang(lang);
 
-    // 2. Offer to import generic env keys into keys.json (isolation by default)
-    const found = keys.detectEnvKeys();
-    if (found.length) {
-      console.log('\n' + C.bold('API keys detected in your shell environment') + C.dim(' (not used unless imported — keys are isolated in ' + keys.KEYS_FILE + ')'));
-      for (const f of found) {
-        const yes = opts.importEnv || (await ask('  import ' + f.env + ' (' + keys.mask(f.value) + ') as "' + f.id + '"? (y/N)', 'n')).toLowerCase().startsWith('y');
-        if (yes) { keys.setKey(f.id, f.value); console.log('  ' + C.green('✓') + ' imported -> ' + f.id); }
-      }
-    }
-
-    // 3. Backend
+    // 2. Backend
     let backend = opts.backend;
     if (!backend) {
       console.log('\n' + C.bold('Translation backend') + ':');
@@ -71,8 +61,9 @@ async function runSetup(opts) {
     const b = getBackend(backend);
     if (!b) { console.error(C.red('unknown backend: ' + backend)); return false; }
 
-    // 4. Key entry for the chosen backend, if missing
-    if (!b.available() && keys.KEY_IDS[b.id]) {
+    // 3. Key entry for the chosen backend, if missing (keys live ONLY in
+    //    keys.json — shell env vars are never read)
+    if (!b.available() && keys.KEY_IDS.includes(b.id)) {
       const v = opts.key || (await ask('Paste your ' + b.id + ' API key (enter to skip)', ''));
       if (v) { keys.setKey(b.id, v); console.log(C.green('✓') + ' key saved to ' + keys.KEYS_FILE + C.dim(' (chmod 600)')); }
       if (b.id === 'azure' && !keys.getKey('azure-region')) {
@@ -81,12 +72,12 @@ async function runSetup(opts) {
       }
     }
 
-    // 5. Save config
+    // 4. Save config
     setState({ target: lang, backend });
     console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), backend=' + backend +
       (b.available() ? '' : C.red('  (no key yet — will fall back to google)')));
 
-    // 6. Live verification
+    // 5. Live verification
     process.stdout.write(C.dim('verifying… '));
     try {
       const { displayContent } = await buildDisplayContent('Setup verification: translation works.\n', {

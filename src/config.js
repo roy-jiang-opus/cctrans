@@ -1,7 +1,10 @@
 'use strict';
-// Persistent on/off state + backend selection for the translator.
-// State lives in ~/.cc-translate/ (override with TT_HOME). Secrets (API keys)
-// are read from the environment, never persisted here.
+// Persistent settings for the translator. Everything user-configurable lives
+// in files under ~/.cc-translate/ — never in shell environment variables:
+//   state.json  — settings (this module); edit by hand or via tt commands
+//   keys.json   — API secrets (src/keys.js); chmod 600
+// TT_HOME (test plumbing) and TT_DISABLE/TT_DEBUG_STDIN (hook internals) are
+// the only env vars the tool reads.
 
 const fs = require('fs');
 const os = require('os');
@@ -20,12 +23,13 @@ function defaults() {
   const { getKey } = require('./keys'); // lazy: keys.js must not require config.js
   return {
     enabled: true, // default ON: every reply shows bilingual until toggled off
-    backend: process.env.TT_BACKEND || (getKey('openai') ? 'openai' : 'google'),
-    target: process.env.TT_TARGET || 'zh-Hans',
-    model: process.env.TT_OPENAI_MODEL || 'gpt-4o-mini',
-    marker: process.env.TT_MARKER || '↳ ', // prefix on each translated line
+    backend: getKey('openai') ? 'openai' : 'google',
+    target: 'zh-Hans',
+    model: 'gpt-4o-mini', // openai backend model
+    anthropicModel: 'claude-haiku-4-5', // anthropic backend model
+    azureEndpoint: 'https://api.cognitive.microsofttranslator.com',
+    marker: '↳ ', // prefix on each translated line
     inputEn: false, // input translation (prompt -> English) off until enabled
-    useEnvKeys: false, // generic env keys (OPENAI_API_KEY...) ignored unless opted in
   };
 }
 
@@ -44,9 +48,10 @@ function setState(patch) {
     backend: next.backend,
     target: next.target,
     model: next.model,
+    anthropicModel: next.anthropicModel,
+    azureEndpoint: next.azureEndpoint,
     marker: next.marker,
     inputEn: next.inputEn,
-    useEnvKeys: next.useEnvKeys,
   };
   const tmp = STATE_FILE + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(persist, null, 2));

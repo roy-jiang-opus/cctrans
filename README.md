@@ -76,9 +76,9 @@ Then **restart Claude Code** (new session) so the hook loads. Send any message �
 
 If the primary backend fails or times out, the chain **falls back to google** — the session is never blocked. Every translated line is cached by backend + language + content hash.
 
-API keys live in `~/.cc-translate/keys.json` (chmod 600), set via `tt setup` or `tt key` — shell variables like `OPENAI_API_KEY` are **not** read by default, so this tool's keys and your terminal's keys can't contaminate each other. `tt setup` offers to import detected env keys; opt in to generic env reading with `TT_USE_ENV_KEYS=1`, and `TT_OPENAI_KEY`-style overrides always work.
+API keys live **only** in `~/.cc-translate/keys.json` (chmod 600) — set them with `tt setup` / `tt key`, or edit the file directly. Shell environment variables are never read, so this tool's keys and your terminal's keys can't contaminate each other.
 
-Environment variables: `TT_BACKEND`, `TT_TARGET` (default `zh-Hans`), `TT_MARKER` (default `↳ `), `TT_HOME` (default `~/.cc-translate`), `TT_OPENAI_MODEL`, `TT_ANTHROPIC_MODEL`, `AZURE_TRANSLATOR_ENDPOINT`.
+All other settings (backend, language, marker, models, Azure endpoint) live in `~/.cc-translate/state.json` — change them via `tt` commands or edit the file directly.
 
 ## Languages
 
