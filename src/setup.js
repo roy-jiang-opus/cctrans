@@ -1,7 +1,8 @@
 'use strict';
-// Interactive setup wizard: language -> API-key import/entry -> backend ->
-// live verification -> save. Re-runnable via `tt setup`; non-interactive with
-// flags (--lang, --backend, --key, --import-env, --yes).
+// Interactive setup wizard: language -> backend -> API-key entry -> live
+// verification -> save. Re-runnable via `tt setup`; non-interactive with
+// flags (--lang, --backend, --key, --yes). Keys go to keys.json only — the
+// shell environment is never read.
 
 const readline = require('node:readline/promises');
 const { getState, setState } = require('./config');
