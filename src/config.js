@@ -17,12 +17,15 @@ function ensureDirs() {
 }
 
 function defaults() {
+  const { getKey } = require('./keys'); // lazy: keys.js must not require config.js
   return {
     enabled: true, // default ON: every reply shows bilingual until toggled off
-    backend: process.env.TT_BACKEND || (process.env.OPENAI_API_KEY ? 'openai' : 'google'),
+    backend: process.env.TT_BACKEND || (getKey('openai') ? 'openai' : 'google'),
     target: process.env.TT_TARGET || 'zh-Hans',
     model: process.env.TT_OPENAI_MODEL || 'gpt-4o-mini',
-    marker: process.env.TT_MARKER || '↳ ', // prefix on each Chinese line
+    marker: process.env.TT_MARKER || '↳ ', // prefix on each translated line
+    inputEn: false, // input translation (prompt -> English) off until enabled
+    useEnvKeys: false, // generic env keys (OPENAI_API_KEY...) ignored unless opted in
   };
 }
 
@@ -42,6 +45,8 @@ function setState(patch) {
     target: next.target,
     model: next.model,
     marker: next.marker,
+    inputEn: next.inputEn,
+    useEnvKeys: next.useEnvKeys,
   };
   const tmp = STATE_FILE + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(persist, null, 2));

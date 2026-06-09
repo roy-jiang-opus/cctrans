@@ -1,6 +1,6 @@
-# terminal-translate
+# cctranslate
 
-[English](README.md) | **简体中文** | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
+[English](README.md) | **简体中文** | [繁體中文](README.zh-Hant.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
 给 Claude Code 加一层**双语对照**:每条回复在原始英文行下面自动补一行译文(中/日/韩/俄/印地),**就在对话里**,一行英文一行译文。
 
@@ -37,7 +37,7 @@ Claude 流式输出英文
 ```bash
 git clone git@github.com:roy-jiang-opus/cctranslate.git
 cd cctranslate
-node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 链接到 ~/.local/bin
+node bin/tt.js install      # 注册钩子、链接 tt 到 ~/.local/bin,然后运行 setup 向导
 ```
 
 然后**重启 Claude Code**(开新会话)让钩子生效。发任意消息,回复就会双语对照。
@@ -54,6 +54,9 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 | `tt lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
 | `tt backend <id>` | 切换翻译引擎 |
 | `tt backends` | 列出所有引擎及其可用性 |
+| `tt setup` | 交互式向导:语言、后端、API key |
+| `tt key [id] [value]` | 管理 `~/.cc-translate/keys.json` 里的 API key |
+| `tt input on` / `tt input off` | 把非英文输入翻译成英文(作为上下文发给模型) |
 | `tt last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
 | `tt test <文本>` | 翻译一段文本,验证引擎 |
 | `tt install` / `tt uninstall` | 注册 / 移除钩子 |
@@ -64,14 +67,16 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 
 | 后端 | 前提 | 速度 | 质量 | 说明 |
 |------|------|------|------|------|
-| `openai`(有 key 时默认) | `OPENAI_API_KEY` | ~1.4s/段 | 高 | `gpt-4o-mini` 批量行翻译,保留代码/路径 |
-| `anthropic` | `ANTHROPIC_API_KEY` | ~1s/段 | 高 | `claude-haiku-4-5` + structured outputs,严格等长行数组(约 $0.0005/段) |
-| `deepl` | `DEEPL_API_KEY`(免费档 50 万字符/月) | ~0.5s/段 | 高 | 传统 MT 质量天花板;数组接口天然对齐行 |
-| `azure` | `AZURE_TRANSLATOR_KEY`(免费 200 万字符/月) | ~0.5s/段 | 中高 | 可加 `AZURE_TRANSLATOR_REGION` |
+| `openai`(有 key 时默认) | `tt key openai` | ~1.4s/段 | 高 | `gpt-4o-mini` 批量行翻译,保留代码/路径 |
+| `anthropic` | `tt key anthropic` | ~1s/段 | 高 | `claude-haiku-4-5` + structured outputs,严格等长行数组(约 $0.0005/段) |
+| `deepl` | `tt key deepl`(免费档 50 万字符/月) | ~0.5s/段 | 高 | 传统 MT 质量天花板;数组接口天然对齐行 |
+| `azure` | `tt key azure`(免费 200 万字符/月) | ~0.5s/段 | 中高 | 可加 `tt key azure-region` |
 | `google` | 无 | ~0.3s/段 | 中 | 免费非官方接口;**所有后端失败时的兜底** |
 | `claude-code` | `claude` CLI 已登录 | ~3-6s/段 | 高 | 走你的 **Claude 订阅**(`claude -p` headless),零额外费用但明显慢 |
 
 主后端失败/超时会自动**降级到 google**,任何情况下都不会卡住会话。每行译文按「后端+语言+内容」哈希缓存。
+
+API key 存放在 `~/.cc-translate/keys.json`(chmod 600),通过 `tt setup` 或 `tt key` 设置——默认**不读取**终端的 `OPENAI_API_KEY` 等环境变量,本工具的 key 和终端的 key 互不污染。`tt setup` 会提示导入检测到的环境变量 key;需要读取通用环境变量可用 `TT_USE_ENV_KEYS=1` 开启,`TT_OPENAI_KEY` 这类专属覆盖始终有效。
 
 环境变量:`TT_BACKEND`、`TT_TARGET`(默认 `zh-Hans`)、`TT_MARKER`(默认 `↳ `)、`TT_HOME`(默认 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
 
@@ -89,6 +94,10 @@ tt lang zh-Hans  # 简体中文(默认)
 ```
 
 中文采用 BCP-47 **文字码**(`zh-Hans`/`zh-Hant`)——繁体是文字系统而非地区;`zh-CN` / `zh-TW` 仍可作为别名使用,会自动归一化。切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
+
+## 输入翻译
+
+`tt input on` 启用 `UserPromptSubmit` 钩子:当你的输入大部分是非英文时,英文译文会作为上下文附给模型并被视为权威指令——你继续用母语打字,模型按英文工作。(已在 CC 2.1.169 核实:钩子无法改写 prompt 本身,所以原文仍在历史里,英文随附。)英文输入原样通过;任何错误都安全回退为原样发送。
 
 ## 行为与限制(已核实)
 

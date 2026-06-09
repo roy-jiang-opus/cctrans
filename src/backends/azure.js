@@ -3,20 +3,22 @@
 // The v3 endpoint accepts an array of {Text} and returns aligned results.
 // Needs AZURE_TRANSLATOR_KEY and (for regional resources) AZURE_TRANSLATOR_REGION.
 const { getLang } = require('../langs');
+const { getKey } = require('../keys');
 
 module.exports = {
   id: 'azure',
   kind: 'mt',
-  needs: 'AZURE_TRANSLATOR_KEY (+ AZURE_TRANSLATOR_REGION)',
-  available() { return !!process.env.AZURE_TRANSLATOR_KEY; },
+  needs: 'azure key (tt key azure <value>; region: tt key azure-region <value>)',
+  available() { return !!getKey('azure'); },
   async translate(lines, langCode) {
-    const key = process.env.AZURE_TRANSLATOR_KEY;
-    if (!key) throw new Error('no AZURE_TRANSLATOR_KEY');
+    const key = getKey('azure');
+    if (!key) throw new Error('no azure key');
     const lang = getLang(langCode);
     const target = lang ? lang.azure : langCode;
     const endpoint = process.env.AZURE_TRANSLATOR_ENDPOINT || 'https://api.cognitive.microsofttranslator.com';
     const headers = { 'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': key };
-    if (process.env.AZURE_TRANSLATOR_REGION) headers['Ocp-Apim-Subscription-Region'] = process.env.AZURE_TRANSLATOR_REGION;
+    const region = getKey('azure-region');
+    if (region) headers['Ocp-Apim-Subscription-Region'] = region;
     const res = await fetch(endpoint + '/translate?api-version=3.0&to=' + encodeURIComponent(target), {
       method: 'POST',
       headers,

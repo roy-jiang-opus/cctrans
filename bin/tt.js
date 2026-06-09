@@ -20,7 +20,9 @@ const { listBackends, getBackend } = require('../src/backends');
 const { getLang, listLangs, normalizeLang } = require('../src/langs');
 
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
+const INPUT_HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'user-prompt-submit.js');
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
+const keys = require('../src/keys');
 
 const C = {
   dim: (s) => '\x1b[2m' + s + '\x1b[0m',
@@ -44,17 +46,32 @@ function hookInstalled(s) {
   const groups = (s.hooks && s.hooks.MessageDisplay) || [];
   return JSON.stringify(groups).includes('message-display.js');
 }
+function inputHookInstalled(s) {
+  s = s || readSettings();
+  const groups = (s.hooks && s.hooks.UserPromptSubmit) || [];
+  return JSON.stringify(groups).includes('user-prompt-submit.js');
+}
 
 function install() {
   const s = readSettings();
   s.hooks = s.hooks || {};
-  s.hooks.MessageDisplay = s.hooks.MessageDisplay || [];
-  if (hookInstalled(s)) {
-    console.log(C.green('✓') + ' hook already registered in ' + SETTINGS);
-  } else {
+  let changed = false;
+  if (!hookInstalled(s)) {
+    s.hooks.MessageDisplay = s.hooks.MessageDisplay || [];
     s.hooks.MessageDisplay.push({ hooks: [{ type: 'command', command: 'node ' + HOOK_PATH }] });
+    changed = true;
+  }
+  if (!inputHookInstalled(s)) {
+    // Registered always; the hook exits instantly unless `tt input on`.
+    s.hooks.UserPromptSubmit = s.hooks.UserPromptSubmit || [];
+    s.hooks.UserPromptSubmit.push({ hooks: [{ type: 'command', command: 'node ' + INPUT_HOOK_PATH }] });
+    changed = true;
+  }
+  if (changed) {
     writeSettings(s);
-    console.log(C.green('✓') + ' registered MessageDisplay hook in ' + SETTINGS);
+    console.log(C.green('✓') + ' registered MessageDisplay + UserPromptSubmit hooks in ' + SETTINGS);
+  } else {
+    console.log(C.green('✓') + ' hooks already registered in ' + SETTINGS);
   }
   // Make `tt` runnable from anywhere (best-effort symlink on a common PATH dir).
   const linkDir = path.join(os.homedir(), '.local', 'bin');
@@ -77,13 +94,17 @@ function install() {
 
 function uninstall() {
   const s = readSettings();
-  if (s.hooks && Array.isArray(s.hooks.MessageDisplay)) {
-    s.hooks.MessageDisplay = s.hooks.MessageDisplay.filter((g) => !JSON.stringify(g).includes('message-display.js'));
-    if (s.hooks.MessageDisplay.length === 0) delete s.hooks.MessageDisplay;
-    if (s.hooks && Object.keys(s.hooks).length === 0) delete s.hooks;
+  if (s.hooks) {
+    for (const [event, file] of [['MessageDisplay', 'message-display.js'], ['UserPromptSubmit', 'user-prompt-submit.js']]) {
+      if (Array.isArray(s.hooks[event])) {
+        s.hooks[event] = s.hooks[event].filter((g) => !JSON.stringify(g).includes(file));
+        if (s.hooks[event].length === 0) delete s.hooks[event];
+      }
+    }
+    if (Object.keys(s.hooks).length === 0) delete s.hooks;
     writeSettings(s);
   }
-  console.log(C.green('✓') + ' removed the MessageDisplay hook. Restart Claude Code to take effect.');
+  console.log(C.green('✓') + ' removed cctranslate hooks. Restart Claude Code to take effect.');
 }
 
 function status() {
@@ -96,7 +117,26 @@ function status() {
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: tt install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
   console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: tt lang)')));
+  console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (prompt -> English; toggle: tt input on|off)'));
+  console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: tt key)'));
   console.log('  state   : ' + STATE_FILE);
+}
+
+function keyCmd(rest) {
+  const [id, value] = rest;
+  if (!id) {
+    console.log(C.bold('keys') + C.dim('  (' + keys.KEYS_FILE + ', chmod 600; generic env keys ignored unless useEnvKeys)'));
+    for (const kid of Object.keys(keys.KEY_IDS)) {
+      const src = keys.keySource(kid);
+      console.log('  ' + kid.padEnd(14) + (src ? C.green(keys.mask(keys.getKey(kid))) + C.dim('  from ' + src) : C.dim('(unset)')));
+    }
+    return;
+  }
+  if (!keys.KEY_IDS[id]) { console.error('unknown key id: ' + id + '\nvalid: ' + Object.keys(keys.KEY_IDS).join(', ')); process.exit(1); }
+  if (!value) { console.log(id + ' = ' + keys.mask(keys.getKey(id)) + C.dim('  (source: ' + (keys.keySource(id) || 'none') + ')')); return; }
+  if (value === '--clear') { keys.setKey(id, null); console.log(C.green('✓') + ' cleared ' + id); return; }
+  keys.setKey(id, value);
+  console.log(C.green('✓') + ' ' + id + ' = ' + keys.mask(value) + C.dim('  saved to ' + keys.KEYS_FILE));
 }
 
 function backends() {
@@ -135,18 +175,23 @@ async function last(nBack) {
 }
 
 function help() {
-  console.log(`${C.bold('tt')} — Claude Code bilingual (English + 中文) overlay
+  console.log(`${C.bold('tt')} — cctranslate: bilingual overlay for Claude Code
 
 ${C.bold('Control')}
   tt on | off | toggle      turn the inline translation on/off
+  tt input on | off         translate non-English input to English (as context)
   tt status                 show current state
   tt lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
   tt backend <id>           choose translation engine
   tt backends               list engines + availability
 
 ${C.bold('Setup')}
-  tt install                register the MessageDisplay hook (+ link tt)
-  tt uninstall              remove the hook
+  tt install                register hooks (+ link tt), then run setup
+  tt setup                  interactive wizard: language, backend, API keys
+                            (flags: --lang --backend --key --import-env --yes)
+  tt key [id] [value]       manage API keys in ~/.cc-translate/keys.json
+                            (ids: openai, anthropic, deepl, azure, azure-region)
+  tt uninstall              remove the hooks
 
 ${C.bold('Manual / test')}
   tt last [N]               translate the latest (or N-back) assistant reply
@@ -183,7 +228,35 @@ async function main() {
       console.log(C.green('✓') + ' lang = ' + canonical + C.dim('  (' + lang.name + (canonical !== code ? ', normalized from ' + code : '') + ')'));
       break;
     }
-    case 'install': install(); break;
+    case 'install': {
+      install();
+      if (process.stdin.isTTY && !rest.includes('--no-setup')) {
+        console.log('');
+        await require('../src/setup').runSetup({});
+      }
+      break;
+    }
+    case 'setup': {
+      const flag = (name) => { const i = rest.indexOf(name); return i > -1 ? rest[i + 1] : undefined; };
+      await require('../src/setup').runSetup({
+        lang: flag('--lang'),
+        backend: flag('--backend'),
+        key: flag('--key'),
+        importEnv: rest.includes('--import-env'),
+        yes: rest.includes('--yes'),
+      });
+      break;
+    }
+    case 'key': keyCmd(rest); break;
+    case 'input': {
+      const sub = rest[0];
+      if (sub === 'on' || sub === 'off') setState({ inputEn: sub === 'on' });
+      else if (sub === 'toggle') setState({ inputEn: !getState().inputEn });
+      const st = getState();
+      console.log('input translation (prompt -> English): ' + (st.inputEn ? C.green('ON') : C.red('OFF')) +
+        (inputHookInstalled() ? '' : C.red('  (hook not installed — run: tt install)')));
+      break;
+    }
     case 'uninstall': uninstall(); break;
     case 'status': status(); break;
     case 'last': await last(parseInt(rest[0], 10) || 0); break;

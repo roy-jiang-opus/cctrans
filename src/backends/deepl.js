@@ -3,15 +3,16 @@
 // api-free host. The /v2/translate endpoint accepts an array of texts and
 // returns translations in the same order — perfect line mapping for free.
 const { getLang } = require('../langs');
+const { getKey } = require('../keys');
 
 module.exports = {
   id: 'deepl',
   kind: 'mt',
-  needs: 'DEEPL_API_KEY',
-  available() { return !!process.env.DEEPL_API_KEY; },
+  needs: 'deepl key (tt key deepl <value>)',
+  available() { return !!getKey('deepl'); },
   async translate(lines, langCode) {
-    const key = process.env.DEEPL_API_KEY;
-    if (!key) throw new Error('no DEEPL_API_KEY');
+    const key = getKey('deepl');
+    if (!key) throw new Error('no deepl key');
     const lang = getLang(langCode);
     const target = lang ? lang.deepl : String(langCode).toUpperCase();
     const host = key.endsWith(':fx') ? 'api-free.deepl.com' : 'api.deepl.com';

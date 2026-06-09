@@ -1,0 +1,107 @@
+'use strict';
+// Interactive setup wizard: language -> API-key import/entry -> backend ->
+// live verification -> save. Re-runnable via `tt setup`; non-interactive with
+// flags (--lang, --backend, --key, --import-env, --yes).
+
+const readline = require('node:readline/promises');
+const { getState, setState } = require('./config');
+const { listLangs, getLang, normalizeLang } = require('./langs');
+const { listBackends, getBackend } = require('./backends');
+const keys = require('./keys');
+const { buildDisplayContent } = require('./interleave');
+
+const C = {
+  dim: (s) => '\x1b[2m' + s + '\x1b[0m',
+  cyan: (s) => '\x1b[36m' + s + '\x1b[0m',
+  green: (s) => '\x1b[32m' + s + '\x1b[0m',
+  red: (s) => '\x1b[31m' + s + '\x1b[0m',
+  bold: (s) => '\x1b[1m' + s + '\x1b[0m',
+};
+
+async function runSetup(opts) {
+  opts = opts || {};
+  const interactive = !opts.yes && process.stdin.isTTY;
+  const rl = interactive
+    ? readline.createInterface({ input: process.stdin, output: process.stdout })
+    : null;
+  const ask = async (q, def) => {
+    if (!rl) return def;
+    const a = (await rl.question(q + (def ? C.dim(' [' + def + '] ') : ' '))).trim();
+    return a || def;
+  };
+
+  try {
+    console.log(C.bold('cctranslate setup') + C.dim('  (re-run anytime: tt setup)'));
+
+    // 1. Target language
+    let lang = opts.lang;
+    if (!lang) {
+      const codes = listLangs();
+      console.log('\n' + C.bold('Target language') + ' — translations appear under each English line:');
+      codes.forEach((c, i) => console.log('  ' + (i + 1) + '. ' + c.padEnd(8) + C.dim(getLang(c).name)));
+      const cur = getState().target;
+      const a = await ask('Pick a number or code', cur);
+      lang = /^\d+$/.test(a) ? codes[parseInt(a, 10) - 1] : a;
+    }
+    if (!getLang(lang)) { console.error(C.red('unsupported language: ' + lang)); return false; }
+    lang = normalizeLang(lang);
+
+    // 2. Offer to import generic env keys into keys.json (isolation by default)
+    const found = keys.detectEnvKeys();
+    if (found.length) {
+      console.log('\n' + C.bold('API keys detected in your shell environment') + C.dim(' (not used unless imported — keys are isolated in ' + keys.KEYS_FILE + ')'));
+      for (const f of found) {
+        const yes = opts.importEnv || (await ask('  import ' + f.env + ' (' + keys.mask(f.value) + ') as "' + f.id + '"? (y/N)', 'n')).toLowerCase().startsWith('y');
+        if (yes) { keys.setKey(f.id, f.value); console.log('  ' + C.green('✓') + ' imported -> ' + f.id); }
+      }
+    }
+
+    // 3. Backend
+    let backend = opts.backend;
+    if (!backend) {
+      console.log('\n' + C.bold('Translation backend') + ':');
+      for (const b of listBackends()) {
+        console.log('  ' + b.id.padEnd(12) + (b.available() ? C.green('ready  ') : C.red('no key ')) + C.dim(b.needs));
+      }
+      const def = getState().backend && getBackend(getState().backend) && getBackend(getState().backend).available()
+        ? getState().backend
+        : (getBackend('openai').available() ? 'openai' : 'google');
+      backend = await ask('Pick a backend', def);
+    }
+    const b = getBackend(backend);
+    if (!b) { console.error(C.red('unknown backend: ' + backend)); return false; }
+
+    // 4. Key entry for the chosen backend, if missing
+    if (!b.available() && keys.KEY_IDS[b.id]) {
+      const v = opts.key || (await ask('Paste your ' + b.id + ' API key (enter to skip)', ''));
+      if (v) { keys.setKey(b.id, v); console.log(C.green('✓') + ' key saved to ' + keys.KEYS_FILE + C.dim(' (chmod 600)')); }
+      if (b.id === 'azure' && !keys.getKey('azure-region')) {
+        const r = await ask('Azure region (enter to skip)', '');
+        if (r) keys.setKey('azure-region', r);
+      }
+    }
+
+    // 5. Save config
+    setState({ target: lang, backend });
+    console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), backend=' + backend +
+      (b.available() ? '' : C.red('  (no key yet — will fall back to google)')));
+
+    // 6. Live verification
+    process.stdout.write(C.dim('verifying… '));
+    try {
+      const { displayContent } = await buildDisplayContent('Setup verification: translation works.\n', {
+        target: lang, backend, timeoutMs: 12000,
+      });
+      console.log('\n' + (displayContent || C.red('(nothing translated — check the backend)')));
+    } catch (e) {
+      console.log(C.red('verification failed: ' + e.message));
+    }
+
+    console.log(C.dim('\nNext: restart Claude Code (new session). Toggle with `!tt off` / `!tt on`; input translation: `tt input on`.'));
+    return true;
+  } finally {
+    if (rl) rl.close();
+  }
+}
+
+module.exports = { runSetup };

@@ -1,16 +1,17 @@
 'use strict';
 // OpenAI gpt-4o-mini batch translation. High quality, preserves code/paths.
 const { getLang } = require('../langs');
+const { getKey } = require('../keys');
 
 module.exports = {
   id: 'openai',
   kind: 'llm',
-  needs: 'OPENAI_API_KEY',
-  available() { return !!process.env.OPENAI_API_KEY; },
+  needs: 'openai key (tt key openai <value>)',
+  available() { return !!getKey('openai'); },
   async translate(lines, langCode, opts) {
     opts = opts || {};
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) throw new Error('no OPENAI_API_KEY');
+    const key = getKey('openai');
+    if (!key) throw new Error('no openai key');
     const lang = getLang(langCode);
     const name = lang ? lang.name : langCode;
     const sys =

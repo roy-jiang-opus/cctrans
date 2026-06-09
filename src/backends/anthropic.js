@@ -4,6 +4,7 @@
 // (output_config.format json_schema) so {"t":[...]} is guaranteed valid JSON.
 // Model claude-haiku-4-5: $1/M input, $5/M output — ~$0.0005 per delta.
 const { getLang } = require('../langs');
+const { getKey } = require('../keys');
 
 const SCHEMA = {
   type: 'object',
@@ -15,12 +16,12 @@ const SCHEMA = {
 module.exports = {
   id: 'anthropic',
   kind: 'llm',
-  needs: 'ANTHROPIC_API_KEY',
-  available() { return !!process.env.ANTHROPIC_API_KEY; },
+  needs: 'anthropic key (tt key anthropic <value>)',
+  available() { return !!getKey('anthropic'); },
   async translate(lines, langCode, opts) {
     opts = opts || {};
-    const key = process.env.ANTHROPIC_API_KEY;
-    if (!key) throw new Error('no ANTHROPIC_API_KEY');
+    const key = getKey('anthropic');
+    if (!key) throw new Error('no anthropic key');
     const lang = getLang(langCode);
     const name = lang ? lang.name : langCode;
     const sys =

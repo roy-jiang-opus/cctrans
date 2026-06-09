@@ -17,12 +17,15 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / >9000 chars → emit nothing → original English.
 
 ## Files
-- `bin/tt.js` — CLI: on/off/toggle/status/lang/backend/backends/install/uninstall/last/test
-- `hook/message-display.js` — the hook entry (stdin → displayContent); TT_DISABLE recursion guard
+- `bin/tt.js` — CLI: on/off/toggle/status/lang/backend/backends/setup/key/input/install/uninstall/last/test
+- `hook/message-display.js` — output overlay hook (stdin → displayContent); TT_DISABLE recursion guard
+- `hook/user-prompt-submit.js` — input translation hook (non-English prompt → English additionalContext)
 - `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output
-- `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
+- `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
+- `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600); resolution keys.json → TT_* env → generic env only if useEnvKeys. Must NOT require config.js (config requires keys for the default backend).
+- `src/setup.js` — interactive wizard (lang → key import → backend → key entry → live verify)
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`
 - `src/transcript.js` — find + parse session JSONL (used by `tt last`)
 
@@ -30,6 +33,9 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `keybindings.json` cannot run shell commands or toggle hooks → there is no true
   in-TUI hotkey. Toggle is a flag (`tt on/off`), fastest via `!tt off` inside CC.
 - MessageDisplay timeout is 10s; output cap ~10k chars. Keep per-delta work fast.
+- `UserPromptSubmit`/`UserPromptExpansion` output schemas (2.1.169 binary) allow only
+  `additionalContext` + block — hooks CANNOT rewrite the prompt. Input translation
+  therefore attaches the English as context; the original stays in history.
 
 ## Testing
 - `node bin/tt.js test "<text>"` — engine only.

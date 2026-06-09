@@ -41,7 +41,22 @@ const LANGS = {
     google: 'hi', deepl: 'HI', azure: 'hi',
     script: /[ऀ-ॿ]/g, // Devanagari
   },
+  en: {
+    name: 'English',
+    google: 'en', deepl: 'EN-US', azure: 'en',
+    script: /[A-Za-z]/g, // Latin — used by input translation (prompt -> English)
+  },
 };
+
+// Combined non-Latin script regex: "is this text written in one of the
+// supported non-English languages?" Used by the input-translation hook.
+const NON_LATIN = /[一-鿿㐀-䶿぀-ゟ゠-ヿ가-힯ᄀ-ᇿЀ-ӿऀ-ॿ]/g;
+
+function nonLatinRatio(text) {
+  const hits = (text.match(NON_LATIN) || []).length;
+  const nonspace = text.replace(/\s/g, '').length;
+  return nonspace === 0 ? 0 : hits / nonspace;
+}
 
 // Region-code (and bare-zh) aliases -> canonical script codes.
 const ALIASES = {
@@ -62,7 +77,9 @@ function getLang(code) {
 }
 
 function listLangs() {
-  return Object.keys(LANGS);
+  // 'en' is reserved for the input-translation direction (prompt -> English);
+  // it's resolvable via getLang but not advertised as an overlay target.
+  return Object.keys(LANGS).filter((k) => k !== 'en');
 }
 
 // True if the line is (mostly) already written in the target language's script.
@@ -74,4 +91,4 @@ function isProbablyTarget(line, code) {
   return nonspace > 0 && hits / nonspace >= 0.3;
 }
 
-module.exports = { LANGS, getLang, listLangs, isProbablyTarget, normalizeLang };
+module.exports = { LANGS, getLang, listLangs, isProbablyTarget, normalizeLang, nonLatinRatio };
