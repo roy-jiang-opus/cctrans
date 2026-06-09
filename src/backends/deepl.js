@@ -8,7 +8,7 @@ const { getKey } = require('../keys');
 module.exports = {
   id: 'deepl',
   kind: 'mt',
-  needs: 'deepl key (tt key deepl <value>)',
+  needs: 'deepl key (cctrans key deepl <value>)',
   available() { return !!getKey('deepl'); },
   async translate(lines, langCode) {
     const key = getKey('deepl');

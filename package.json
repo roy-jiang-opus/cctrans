@@ -1,6 +1,6 @@
 {
   "name": "cctrans",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bilingual inline translation overlay for Claude Code: a translated line (zh/ja/ko/ru/hi) under each English line, right in the conversation — non-destructive, zero main-loop tokens.",
   "license": "MIT",
   "author": "Roy Jiang",
@@ -24,7 +24,7 @@
     "korean"
   ],
   "bin": {
-    "tt": "bin/tt.js"
+    "cctrans": "bin/cctrans.js"
   },
   "files": [
     "bin/",
@@ -32,7 +32,8 @@
     "src/",
     "README*.md",
     "ROADMAP.md",
-    "LICENSE"
+    "LICENSE",
+    "MOTIVATION.md"
   ],
   "engines": {
     "node": ">=18"

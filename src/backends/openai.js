@@ -6,7 +6,7 @@ const { getKey } = require('../keys');
 module.exports = {
   id: 'openai',
   kind: 'llm',
-  needs: 'openai key (tt key openai <value>)',
+  needs: 'openai key (cctrans key openai <value>)',
   available() { return !!getKey('openai'); },
   async translate(lines, langCode, opts) {
     opts = opts || {};

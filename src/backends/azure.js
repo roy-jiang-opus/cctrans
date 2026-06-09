@@ -8,7 +8,7 @@ const { getKey } = require('../keys');
 module.exports = {
   id: 'azure',
   kind: 'mt',
-  needs: 'azure key (tt key azure <value>; region: tt key azure-region <value>)',
+  needs: 'azure key (cctrans key azure <value>; region: cctrans key azure-region <value>)',
   available() { return !!getKey('azure'); },
   async translate(lines, langCode) {
     const key = getKey('azure');

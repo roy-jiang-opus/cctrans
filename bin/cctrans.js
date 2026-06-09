@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 'use strict';
-// tt — control + test CLI for the Claude Code bilingual (EN->ZH) overlay.
+// cctrans — control + test CLI for the Claude Code bilingual overlay.
 //
-//   tt on | off | toggle | status
-//   tt backend <openai|google>
-//   tt install | uninstall        register/remove the MessageDisplay hook
-//   tt last [N]                    translate the latest (or Nth-back) reply -> stdout
-//   tt test <text...>              translate ad-hoc text -> stdout
-//   tt help
+//   cctrans on | off | toggle | status
+//   cctrans backend <openai|google>
+//   cctrans install | uninstall        register/remove the MessageDisplay hook
+//   cctrans last [N]                    translate the latest (or Nth-back) reply -> stdout
+//   cctrans test <text...>              translate ad-hoc text -> stdout
+//   cctrans help
 
 const fs = require('fs');
 const os = require('os');
@@ -36,8 +36,8 @@ function readSettings() {
   try { return JSON.parse(fs.readFileSync(SETTINGS, 'utf8')); } catch (e) { return {}; }
 }
 function writeSettings(s) {
-  try { fs.copyFileSync(SETTINGS, SETTINGS + '.bak-tt'); } catch (e) {}
-  const tmp = SETTINGS + '.tt.tmp';
+  try { fs.copyFileSync(SETTINGS, SETTINGS + '.bak-cctrans'); } catch (e) {}
+  const tmp = SETTINGS + '.cctrans.tmp';
   fs.writeFileSync(tmp, JSON.stringify(s, null, 2));
   fs.renameSync(tmp, SETTINGS);
 }
@@ -62,7 +62,7 @@ function install() {
     changed = true;
   }
   if (!inputHookInstalled(s)) {
-    // Registered always; the hook exits instantly unless `tt input on`.
+    // Registered always; the hook exits instantly unless `cctrans input on`.
     s.hooks.UserPromptSubmit = s.hooks.UserPromptSubmit || [];
     s.hooks.UserPromptSubmit.push({ hooks: [{ type: 'command', command: 'node ' + INPUT_HOOK_PATH }] });
     changed = true;
@@ -73,23 +73,23 @@ function install() {
   } else {
     console.log(C.green('✓') + ' hooks already registered in ' + SETTINGS);
   }
-  // Make `tt` runnable from anywhere (best-effort symlink on a common PATH dir).
+  // Make `cctrans` runnable from anywhere (best-effort symlink on a common PATH dir).
   const linkDir = path.join(os.homedir(), '.local', 'bin');
-  const link = path.join(linkDir, 'tt');
+  const link = path.join(linkDir, 'cctrans');
   try {
     fs.mkdirSync(linkDir, { recursive: true });
     try { fs.unlinkSync(link); } catch (e) {}
-    fs.symlinkSync(path.resolve(__dirname, 'tt.js'), link);
-    fs.chmodSync(path.resolve(__dirname, 'tt.js'), 0o755);
-    console.log(C.green('✓') + ' linked `tt` -> ' + link + (process.env.PATH.includes(linkDir) ? '' : C.dim('  (add ' + linkDir + ' to PATH)')));
+    fs.symlinkSync(path.resolve(__dirname, 'cctrans.js'), link);
+    fs.chmodSync(path.resolve(__dirname, 'cctrans.js'), 0o755);
+    console.log(C.green('✓') + ' linked `cctrans` -> ' + link + (process.env.PATH.includes(linkDir) ? '' : C.dim('  (add ' + linkDir + ' to PATH)')));
   } catch (e) {
-    console.log(C.dim('  (could not symlink tt; add alias:  alias tt=\'node ' + path.resolve(__dirname, 'tt.js') + '\')'));
+    console.log(C.dim('  (could not symlink cctrans; add alias:  alias cctrans=\'node ' + path.resolve(__dirname, 'cctrans.js') + '\')'));
   }
   console.log('');
   console.log('Next:');
   console.log('  1. Restart Claude Code (new session) so the hook loads.');
   console.log('  2. Send any message — replies now show ' + C.bold('English + 中文') + ' inline.');
-  console.log('  3. Toggle anytime:  ' + C.bold('!tt off') + ' / ' + C.bold('!tt on') + '  (typed inside Claude Code).');
+  console.log('  3. Toggle anytime:  ' + C.bold('!cctrans off') + ' / ' + C.bold('!cctrans on') + '  (typed inside Claude Code).');
 }
 
 function uninstall() {
@@ -114,11 +114,11 @@ function status() {
   const lang = getLang(st.target);
   console.log(C.bold('cctranslate status'));
   console.log('  enabled : ' + (st.enabled ? C.green('ON') : C.red('OFF')));
-  console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: tt install)')));
+  console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: cctrans install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
-  console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: tt lang)')));
-  console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (prompt -> English; toggle: tt input on|off)'));
-  console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: tt key)'));
+  console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: cctrans lang)')));
+  console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (prompt -> English; toggle: cctrans input on|off)'));
+  console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: cctrans key)'));
   console.log('  state   : ' + STATE_FILE);
 }
 
@@ -141,7 +141,7 @@ function keyCmd(rest) {
 
 function backends() {
   const st = getState();
-  console.log(C.bold('backends') + C.dim('  (switch: tt backend <id>)'));
+  console.log(C.bold('backends') + C.dim('  (switch: cctrans backend <id>)'));
   for (const b of listBackends()) {
     const mark = b.id === st.backend ? C.cyan('▶ ') : '  ';
     const ok = b.available() ? C.green('ready    ') : C.red('missing  ');
@@ -175,29 +175,29 @@ async function last(nBack) {
 }
 
 function help() {
-  console.log(`${C.bold('tt')} — cctranslate: bilingual overlay for Claude Code
+  console.log(`${C.bold('cctrans')} — bilingual overlay for Claude Code
 
 ${C.bold('Control')}
-  tt on | off | toggle      turn the inline translation on/off
-  tt input on | off         translate non-English input to English (as context)
-  tt status                 show current state
-  tt lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
-  tt backend <id>           choose translation engine
-  tt backends               list engines + availability
+  cctrans on | off | toggle      turn the inline translation on/off
+  cctrans input on | off         translate non-English input to English (as context)
+  cctrans status                 show current state
+  cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
+  cctrans backend <id>           choose translation engine
+  cctrans backends               list engines + availability
 
 ${C.bold('Setup')}
-  tt install                register hooks (+ link tt), then run setup
-  tt setup                  interactive wizard: language, backend, API keys
+  cctrans install                register hooks (+ link cctrans), then run setup
+  cctrans setup                  interactive wizard: language, backend, API keys
                             (flags: --lang --backend --key --yes)
-  tt key [id] [value]       manage API keys in ~/.cc-translate/keys.json
+  cctrans key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
-  tt uninstall              remove the hooks
+  cctrans uninstall              remove the hooks
 
 ${C.bold('Manual / test')}
-  tt last [N]               translate the latest (or N-back) assistant reply
-  tt test <text...>         translate ad-hoc English text
+  cctrans last [N]               translate the latest (or N-back) assistant reply
+  cctrans test <text...>         translate ad-hoc English text
 
-${C.dim('Tip: toggle from inside Claude Code by typing  !tt off  /  !tt on')}`);
+${C.dim('Tip: toggle from inside Claude Code by typing  !cctrans off  /  !cctrans on')}`);
 }
 
 async function main() {
@@ -210,7 +210,7 @@ async function main() {
       const id = rest[0];
       const b = id && getBackend(id);
       if (!b) {
-        console.error('usage: tt backend <' + listBackends().map((x) => x.id).join('|') + '>');
+        console.error('usage: cctrans backend <' + listBackends().map((x) => x.id).join('|') + '>');
         process.exit(1);
       }
       setState({ backend: id });
@@ -253,7 +253,7 @@ async function main() {
       else if (sub === 'toggle') setState({ inputEn: !getState().inputEn });
       const st = getState();
       console.log('input translation (prompt -> English): ' + (st.inputEn ? C.green('ON') : C.red('OFF')) +
-        (inputHookInstalled() ? '' : C.red('  (hook not installed — run: tt install)')));
+        (inputHookInstalled() ? '' : C.red('  (hook not installed — run: cctrans install)')));
       break;
     }
     case 'uninstall': uninstall(); break;
@@ -261,7 +261,7 @@ async function main() {
     case 'last': await last(parseInt(rest[0], 10) || 0); break;
     case 'test': {
       const text = rest.join(' ');
-      if (!text) { console.error('usage: tt test <text>'); process.exit(1); }
+      if (!text) { console.error('usage: cctrans test <text>'); process.exit(1); }
       await renderText(text); break;
     }
     case 'help': case '--help': case '-h': case undefined: help(); break;

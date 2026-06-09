@@ -1,17 +1,17 @@
 'use strict';
 // API-key store. Keys come from exactly ONE place: ~/.cc-translate/keys.json
-// (chmod 600), written by `tt setup` / `tt key` or edited by hand. Shell
+// (chmod 600), written by `cctrans setup` / `cctrans key` or edited by hand. Shell
 // environment variables are never consulted — this tool's keys and the
 // terminal's keys cannot contaminate each other.
 //
 // NOTE: keys.js must not require config.js (config.js requires us for the
-// default-backend decision). TT_HOME is internal plumbing for tests only.
+// default-backend decision). CCTRANS_HOME is internal plumbing for tests only.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const BASE = process.env.TT_HOME || path.join(os.homedir(), '.cc-translate');
+const BASE = process.env.CCTRANS_HOME || path.join(os.homedir(), '.cc-translate');
 const KEYS_FILE = path.join(BASE, 'keys.json');
 
 const KEY_IDS = ['openai', 'anthropic', 'deepl', 'azure', 'azure-region'];

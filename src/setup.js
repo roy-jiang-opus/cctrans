@@ -1,6 +1,6 @@
 'use strict';
 // Interactive setup wizard: language -> backend -> API-key entry -> live
-// verification -> save. Re-runnable via `tt setup`; non-interactive with
+// verification -> save. Re-runnable via `cctrans setup`; non-interactive with
 // flags (--lang, --backend, --key, --yes). Keys go to keys.json only — the
 // shell environment is never read.
 
@@ -32,7 +32,7 @@ async function runSetup(opts) {
   };
 
   try {
-    console.log(C.bold('cctranslate setup') + C.dim('  (re-run anytime: tt setup)'));
+    console.log(C.bold('cctranslate setup') + C.dim('  (re-run anytime: cctrans setup)'));
 
     // 1. Target language
     let lang = opts.lang;
@@ -89,7 +89,7 @@ async function runSetup(opts) {
       console.log(C.red('verification failed: ' + e.message));
     }
 
-    console.log(C.dim('\nNext: restart Claude Code (new session). Toggle with `!tt off` / `!tt on`; input translation: `tt input on`.'));
+    console.log(C.dim('\nNext: restart Claude Code (new session). Toggle with `!cctrans off` / `!cctrans on`; input translation: `cctrans input on`.'));
     return true;
   } finally {
     if (rl) rl.close();

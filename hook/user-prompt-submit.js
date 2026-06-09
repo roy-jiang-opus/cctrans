@@ -23,10 +23,10 @@ function passThrough() { process.exit(0); }
 let data = '';
 process.stdin.on('data', (d) => (data += d));
 process.stdin.on('end', async () => {
-  if (process.env.TT_DEBUG_STDIN) {
-    try { require('fs').appendFileSync(process.env.TT_DEBUG_STDIN, '\n===== prompt =====\n' + data + '\n'); } catch (e) {}
+  if (process.env.CCTRANS_DEBUG_STDIN) {
+    try { require('fs').appendFileSync(process.env.CCTRANS_DEBUG_STDIN, '\n===== prompt =====\n' + data + '\n'); } catch (e) {}
   }
-  if (process.env.TT_DISABLE) return passThrough();
+  if (process.env.CCTRANS_DISABLE) return passThrough();
 
   let inp = {};
   try { inp = JSON.parse(data); } catch (e) { return passThrough(); }

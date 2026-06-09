@@ -42,8 +42,8 @@ function saveFence(id, index, inFence, final) {
 let data = '';
 process.stdin.on('data', (d) => (data += d));
 process.stdin.on('end', async () => {
-  if (process.env.TT_DEBUG_STDIN) {
-    try { fs.appendFileSync(process.env.TT_DEBUG_STDIN, '\n===== delta =====\n' + data + '\n'); } catch (e) {}
+  if (process.env.CCTRANS_DEBUG_STDIN) {
+    try { fs.appendFileSync(process.env.CCTRANS_DEBUG_STDIN, '\n===== delta =====\n' + data + '\n'); } catch (e) {}
   }
   let inp = {};
   try { inp = JSON.parse(data); } catch (e) { return showOriginal(); }
@@ -52,8 +52,8 @@ process.stdin.on('end', async () => {
   if (!delta) return showOriginal();
 
   // Recursion guard: the claude-code backend spawns `claude -p` with
-  // TT_DISABLE=1 so a child Claude process can never re-enter this hook.
-  if (process.env.TT_DISABLE) return showOriginal();
+  // CCTRANS_DISABLE=1 so a child Claude process can never re-enter this hook.
+  if (process.env.CCTRANS_DISABLE) return showOriginal();
 
   let st;
   try { st = getState(); } catch (e) { return showOriginal(); }

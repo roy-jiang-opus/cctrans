@@ -2,7 +2,7 @@
 // Backend registry. Each backend implements:
 //   id        - string
 //   kind      - 'llm' | 'mt' | 'cli'  (informational)
-//   needs     - human-readable requirement shown by `tt backends`
+//   needs     - human-readable requirement shown by `cctrans backends`
 //   available() -> boolean            (are its prerequisites present?)
 //   translate(lines, langCode, opts) -> Promise<string[]>  (same length/order)
 

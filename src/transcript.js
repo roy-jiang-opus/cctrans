@@ -49,7 +49,7 @@ function newestJsonlIn(dir) {
 // 3) globally newest .jsonl across all projects (the active session is
 //    almost always the most recently written one).
 function findTranscript(cwd) {
-  if (process.env.TT_TRANSCRIPT) return process.env.TT_TRANSCRIPT;
+  if (process.env.CCTRANS_TRANSCRIPT) return process.env.CCTRANS_TRANSCRIPT;
 
   const root = projectsRoot();
   const dir = path.join(root, slugForCwd(cwd || process.cwd()));

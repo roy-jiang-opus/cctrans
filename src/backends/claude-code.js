@@ -3,7 +3,7 @@
 // on the user's Claude subscription (no separate API key). Measured ~3s per
 // call (CLI startup) — usable within the hook's 10s budget but noticeably
 // slower than HTTP backends; offered as the no-key option, not the default.
-// TT_DISABLE=1 is set on the child as a recursion guard (the hook exits early
+// CCTRANS_DISABLE=1 is set on the child as a recursion guard (the hook exits early
 // when it sees it), and --settings {} -style hook loading is avoided by -p
 // print mode having no display path.
 const { execFile } = require('child_process');
@@ -16,7 +16,7 @@ function runClaude(prompt, timeoutMs) {
       ['-p', '--model', 'claude-haiku-4-5', '--output-format', 'text'],
       {
         timeout: timeoutMs,
-        env: Object.assign({}, process.env, { TT_DISABLE: '1' }),
+        env: Object.assign({}, process.env, { CCTRANS_DISABLE: '1' }),
         maxBuffer: 1024 * 1024,
       },
       (err, stdout) => (err ? reject(err) : resolve(stdout)),
@@ -29,7 +29,7 @@ module.exports = {
   id: 'claude-code',
   kind: 'cli',
   needs: 'claude CLI logged in (uses your subscription; ~3s/call)',
-  available() { return !process.env.TT_DISABLE; },
+  available() { return !process.env.CCTRANS_DISABLE; },
   async translate(lines, langCode, opts) {
     opts = opts || {};
     const lang = getLang(langCode);

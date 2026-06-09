@@ -15,6 +15,24 @@
 - **不污染历史、不耗主对话 token**:翻译由一个**独立的便宜后端**完成,跟你的 Claude Code 会话完全无关。
 - **一个键开关**:默认常开;读纯英文/代码时一键关掉。
 
+## 为什么做这个
+
+两个痛点,一个架构解决:
+
+**1. Claude Code 老是回英文。** Skills 和文档必须保持英文,即使在 CLAUDE.md 里写了"用中文回复",回复还是会漂回英文。手动让它重答一遍中文,既花一整轮模型调用,又污染对话历史。
+
+**2. 用母语工作有一笔隐形的 token 税——尤其在 Claude 上。** 表达同样的意思,非英语要多花 **约 1.5–3 倍 token**(Claude 的分词器对非拉丁文字压缩很差),而 Claude Code 的 5 小时窗口和每周额度都按 token 计——非英语会话烧额度快 1.5–3 倍。关键是,**模型质量根本不是问题**:Claude 多语言基准 >90%。痛点纯粹是成本。
+
+| | 日语 | 韩语 | 俄语 | 印地语 | 中文 |
+|---|---|---|---|---|---|
+| 相对英文的 token 开销 | ~2–3× | ~2–3×+ | ~1.5× | ~2–3×+ | ~2–3× |
+
+Anthropic 关于按语言调整额度的 issue([#26401](https://github.com/anthropics/claude-code/issues/26401))已被关闭(*not planned*)——官方没有解法。
+
+**所以最省钱且正确的设计正是本工具的做法:** 会话全程保持英文(输入、转录、模型上下文——主对话零额外 token),你的语言只出现在人需要读的地方:每行英文下面一行仅作显示的译文,由独立的便宜后端渲染。
+
+完整调研数据与来源:[MOTIVATION.md](MOTIVATION.md)。
+
 ## 工作原理
 
 利用 Claude Code 原生的 **`MessageDisplay` 钩子**(v2.1.152+):它在每条助手消息渲染时触发,把完成的文本片段(`delta`)交给钩子;钩子返回的 `displayContent` **替换屏幕显示**,但不改变存储的消息。
@@ -35,72 +53,72 @@ Claude 流式输出英文
 ## 安装
 
 ```bash
-npm install -g cctrans && tt install
+npm install -g cctrans && cctrans install
 
 # from source:
 git clone https://github.com/roy-jiang-opus/cctranslate.git
 cd cctranslate
-node bin/tt.js install      # 注册钩子、链接 tt 到 ~/.local/bin,然后运行 setup 向导
+node bin/cctrans.js install      # 注册钩子、链接 cctrans 到 ~/.local/bin,然后运行 setup 向导
 ```
 
 然后**重启 Claude Code**(开新会话)让钩子生效。发任意消息,回复就会双语对照。
 
 > 需要 `~/.local/bin` 在 PATH 里;否则用别名:
-> `alias tt='node /path/to/cctranslate/bin/tt.js'`
+> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
 
 ## 使用
 
 | 命令 | 作用 |
 |------|------|
-| `tt on` / `tt off` / `tt toggle` | 开 / 关 / 切换翻译 |
-| `tt status` | 查看状态(开关、钩子、后端、语言) |
-| `tt lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
-| `tt backend <id>` | 切换翻译引擎 |
-| `tt backends` | 列出所有引擎及其可用性 |
-| `tt setup` | 交互式向导:语言、后端、API key |
-| `tt key [id] [value]` | 管理 `~/.cc-translate/keys.json` 里的 API key |
-| `tt input on` / `tt input off` | 把非英文输入翻译成英文(作为上下文发给模型) |
-| `tt last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
-| `tt test <文本>` | 翻译一段文本,验证引擎 |
-| `tt install` / `tt uninstall` | 注册 / 移除钩子 |
+| `cctrans on` / `cctrans off` / `cctrans toggle` | 开 / 关 / 切换翻译 |
+| `cctrans status` | 查看状态(开关、钩子、后端、语言) |
+| `cctrans lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
+| `cctrans backend <id>` | 切换翻译引擎 |
+| `cctrans backends` | 列出所有引擎及其可用性 |
+| `cctrans setup` | 交互式向导:语言、后端、API key |
+| `cctrans key [id] [value]` | 管理 `~/.cc-translate/keys.json` 里的 API key |
+| `cctrans input on` / `cctrans input off` | 把非英文输入翻译成英文(作为上下文发给模型) |
+| `cctrans last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
+| `cctrans test <文本>` | 翻译一段文本,验证引擎 |
+| `cctrans install` / `cctrans uninstall` | 注册 / 移除钩子 |
 
-**最快的开关方式**:在 Claude Code 输入框里直接输入 `!tt off` 或 `!tt on`(`!` 是 CC 的内置 bash 模式,不调用模型、不花 token)。
+**最快的开关方式**:在 Claude Code 输入框里直接输入 `!cctrans off` 或 `!cctrans on`(`!` 是 CC 的内置 bash 模式,不调用模型、不花 token)。
 
 ## 翻译后端
 
 | 后端 | 前提 | 速度 | 质量 | 说明 |
 |------|------|------|------|------|
-| `openai`(有 key 时默认) | `tt key openai` | ~1.4s/段 | 高 | `gpt-4o-mini` 批量行翻译,保留代码/路径 |
-| `anthropic` | `tt key anthropic` | ~1s/段 | 高 | `claude-haiku-4-5` + structured outputs,严格等长行数组(约 $0.0005/段) |
-| `deepl` | `tt key deepl`(免费档 50 万字符/月) | ~0.5s/段 | 高 | 传统 MT 质量天花板;数组接口天然对齐行 |
-| `azure` | `tt key azure`(免费 200 万字符/月) | ~0.5s/段 | 中高 | 可加 `tt key azure-region` |
+| `openai`(有 key 时默认) | `cctrans key openai` | ~1.4s/段 | 高 | `gpt-4o-mini` 批量行翻译,保留代码/路径 |
+| `anthropic` | `cctrans key anthropic` | ~1s/段 | 高 | `claude-haiku-4-5` + structured outputs,严格等长行数组(约 $0.0005/段) |
+| `deepl` | `cctrans key deepl`(免费档 50 万字符/月) | ~0.5s/段 | 高 | 传统 MT 质量天花板;数组接口天然对齐行 |
+| `azure` | `cctrans key azure`(免费 200 万字符/月) | ~0.5s/段 | 中高 | 可加 `cctrans key azure-region` |
 | `google` | 无 | ~0.3s/段 | 中 | 免费非官方接口;**所有后端失败时的兜底** |
 | `claude-code` | `claude` CLI 已登录 | ~3-6s/段 | 高 | 走你的 **Claude 订阅**(`claude -p` headless),零额外费用但明显慢 |
 
 主后端失败/超时会自动**降级到 google**,任何情况下都不会卡住会话。每行译文按「后端+语言+内容」哈希缓存。
 
-API key **只**存放在 `~/.cc-translate/keys.json`(chmod 600)——用 `tt setup` / `tt key` 设置,或直接编辑该文件。终端环境变量永远不会被读取,本工具的 key 和终端的 key 互不污染。
+API key **只**存放在 `~/.cc-translate/keys.json`(chmod 600)——用 `cctrans setup` / `cctrans key` 设置,或直接编辑该文件。终端环境变量永远不会被读取,本工具的 key 和终端的 key 互不污染。
 
-其余设置(后端、语言、标记、模型、Azure 端点)都在 `~/.cc-translate/state.json` 里——用 `tt` 命令修改或直接编辑文件。
+其余设置(后端、语言、标记、模型、Azure 端点)都在 `~/.cc-translate/state.json` 里——用 `cctrans` 命令修改或直接编辑文件。
 
 ## 多语言
 
 目标语言支持 **CJK + 俄语 + 印地语**(非拉丁文字,可按 Unicode 区间零成本判断"该行已是目标语言"并跳过):
 
 ```bash
-tt lang ja       # 日语
-tt lang ko       # 韩语
-tt lang ru       # 俄语
-tt lang hi       # 印地语
-tt lang zh-Hant  # 繁体中文
-tt lang zh-Hans  # 简体中文(默认)
+cctrans lang ja       # 日语
+cctrans lang ko       # 韩语
+cctrans lang ru       # 俄语
+cctrans lang hi       # 印地语
+cctrans lang zh-Hant  # 繁体中文
+cctrans lang zh-Hans  # 简体中文(默认)
 ```
 
 中文采用 BCP-47 **文字码**(`zh-Hans`/`zh-Hant`)——繁体是文字系统而非地区;`zh-CN` / `zh-TW` 仍可作为别名使用,会自动归一化。切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
 
 ## 输入翻译
 
-`tt input on` 启用 `UserPromptSubmit` 钩子:当你的输入大部分是非英文时,英文译文会作为上下文附给模型并被视为权威指令——你继续用母语打字,模型按英文工作。(已在 CC 2.1.169 核实:钩子无法改写 prompt 本身,所以原文仍在历史里,英文随附。)英文输入原样通过;任何错误都安全回退为原样发送。
+`cctrans input on` 启用 `UserPromptSubmit` 钩子:当你的输入大部分是非英文时,英文译文会作为上下文附给模型并被视为权威指令——你继续用母语打字,模型按英文工作。(已在 CC 2.1.169 核实:钩子无法改写 prompt 本身,所以原文仍在历史里,英文随附。)英文输入原样通过;任何错误都安全回退为原样发送。
 
 ## 行为与限制(已核实)
 
@@ -112,5 +130,5 @@ tt lang zh-Hans  # 简体中文(默认)
 ## 卸载
 
 ```bash
-node bin/tt.js uninstall    # 移除钩子;重启 Claude Code 生效
+node bin/cctrans.js uninstall    # 移除钩子;重启 Claude Code 生效
 ```

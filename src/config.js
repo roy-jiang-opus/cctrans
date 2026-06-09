@@ -1,9 +1,9 @@
 'use strict';
 // Persistent settings for the translator. Everything user-configurable lives
 // in files under ~/.cc-translate/ — never in shell environment variables:
-//   state.json  — settings (this module); edit by hand or via tt commands
+//   state.json  — settings (this module); edit by hand or via cctrans commands
 //   keys.json   — API secrets (src/keys.js); chmod 600
-// TT_HOME (test plumbing) and TT_DISABLE/TT_DEBUG_STDIN (hook internals) are
+// CCTRANS_HOME (test plumbing) and CCTRANS_DISABLE/CCTRANS_DEBUG_STDIN (hook internals) are
 // the only env vars the tool reads.
 
 const fs = require('fs');
@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 
 const HOME = os.homedir();
-const BASE = process.env.TT_HOME || path.join(HOME, '.cc-translate');
+const BASE = process.env.CCTRANS_HOME || path.join(HOME, '.cc-translate');
 const STATE_FILE = path.join(BASE, 'state.json');
 const CACHE_DIR = path.join(BASE, 'cache');
 

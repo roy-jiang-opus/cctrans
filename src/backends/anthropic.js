@@ -16,7 +16,7 @@ const SCHEMA = {
 module.exports = {
   id: 'anthropic',
   kind: 'llm',
-  needs: 'anthropic key (tt key anthropic <value>)',
+  needs: 'anthropic key (cctrans key anthropic <value>)',
   available() { return !!getKey('anthropic'); },
   async translate(lines, langCode, opts) {
     opts = opts || {};
