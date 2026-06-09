@@ -4,12 +4,7 @@
 // paths/URLs, already-Chinese lines, and blanks pass through untouched.
 
 const { translateLines } = require('./translate');
-
-function isProbablyChinese(s) {
-  const han = (s.match(/[一-鿿]/g) || []).length;
-  const nonspace = s.replace(/\s/g, '').length;
-  return nonspace > 0 && han / nonspace >= 0.3;
-}
+const { isProbablyTarget } = require('./langs');
 
 function looksLikeCodeish(s) {
   const t = s.trim();
@@ -25,7 +20,7 @@ function looksLikeCodeish(s) {
 // multiple MessageDisplay deltas. The caller threads the ending fence state of
 // one delta into the next (keyed by message_id), so classify takes an initial
 // inFence and returns the ending inFence alongside the plan.
-function classify(lines, inFenceInit) {
+function classify(lines, inFenceInit, target) {
   const plan = [];
   let inFence = !!inFenceInit;
   for (const line of lines) {
@@ -33,7 +28,7 @@ function classify(lines, inFenceInit) {
     if (isFence) { plan.push({ line, kind: 'code' }); inFence = !inFence; continue; }
     if (inFence) { plan.push({ line, kind: 'code' }); continue; }
     if (line.trim() === '') { plan.push({ line, kind: 'blank' }); continue; }
-    if (isProbablyChinese(line)) { plan.push({ line, kind: 'zh' }); continue; }
+    if (isProbablyTarget(line, target)) { plan.push({ line, kind: 'target' }); continue; }
     if (looksLikeCodeish(line)) { plan.push({ line, kind: 'code' }); continue; }
     plan.push({ line, kind: 'prose' });
   }
@@ -62,8 +57,9 @@ async function buildDisplayContent(rawDelta, opts) {
   const hardBreak = opts.hardBreak === true;
   const cap = opts.cap || 9000;
 
+  const target = opts.target || 'zh-CN';
   const lines = String(rawDelta).split('\n');
-  const { plan, inFence } = classify(lines, opts.inFence);
+  const { plan, inFence } = classify(lines, opts.inFence, target);
 
   const proseIdx = [];
   const proseLines = [];
@@ -73,7 +69,7 @@ async function buildDisplayContent(rawDelta, opts) {
   if (proseLines.length === 0) return { displayContent: null, inFence }; // nothing to translate
 
   const zh = await translateLines(proseLines, {
-    target: opts.target, backend: opts.backend, model: opts.model, timeoutMs: opts.timeoutMs,
+    target, backend: opts.backend, model: opts.model, timeoutMs: opts.timeoutMs,
   });
   const zhFor = {};
   for (let j = 0; j < proseIdx.length; j++) zhFor[proseIdx[j]] = zh[j];
@@ -94,4 +90,4 @@ async function buildDisplayContent(rawDelta, opts) {
   return { displayContent: dc, inFence };
 }
 
-module.exports = { buildDisplayContent, classify, isProbablyChinese, looksLikeCodeish };
+module.exports = { buildDisplayContent, classify, looksLikeCodeish };

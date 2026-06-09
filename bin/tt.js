@@ -16,6 +16,8 @@ const path = require('path');
 const { getState, setState, STATE_FILE } = require('../src/config');
 const { buildDisplayContent } = require('../src/interleave');
 const { findTranscript, extractReply } = require('../src/transcript');
+const { listBackends, getBackend } = require('../src/backends');
+const { getLang, listLangs } = require('../src/langs');
 
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
@@ -87,14 +89,24 @@ function uninstall() {
 function status() {
   const st = getState();
   const installed = hookInstalled();
-  const keyOpenai = !!process.env.OPENAI_API_KEY;
+  const b = getBackend(st.backend);
+  const lang = getLang(st.target);
   console.log(C.bold('terminal-translate status'));
   console.log('  enabled : ' + (st.enabled ? C.green('ON') : C.red('OFF')));
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: tt install)')));
-  console.log('  backend : ' + st.backend + (st.backend === 'openai' ? (keyOpenai ? C.dim('  (OPENAI_API_KEY found)') : C.red('  (OPENAI_API_KEY missing!)')) : C.dim('  (free, no key)')));
-  console.log('  target  : ' + st.target);
-  console.log('  model   : ' + st.model + C.dim('  (openai backend only)'));
+  console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
+  console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: tt lang)')));
   console.log('  state   : ' + STATE_FILE);
+}
+
+function backends() {
+  const st = getState();
+  console.log(C.bold('backends') + C.dim('  (switch: tt backend <id>)'));
+  for (const b of listBackends()) {
+    const mark = b.id === st.backend ? C.cyan('▶ ') : '  ';
+    const ok = b.available() ? C.green('ready    ') : C.red('missing  ');
+    console.log(mark + b.id.padEnd(12) + ok + C.dim('needs: ' + b.needs));
+  }
 }
 
 function colorizeForTerminal(displayContent, marker) {
@@ -128,7 +140,9 @@ function help() {
 ${C.bold('Control')}
   tt on | off | toggle      turn the inline translation on/off
   tt status                 show current state
-  tt backend <openai|google>  choose translation engine
+  tt lang [code]            show/set target language (zh-CN, zh-TW, ja, ko, ru)
+  tt backend <id>           choose translation engine
+  tt backends               list engines + availability
 
 ${C.bold('Setup')}
   tt install                register the MessageDisplay hook (+ link tt)
@@ -148,9 +162,25 @@ async function main() {
     case 'off': setState({ enabled: false }); console.log('✓ translation ' + C.red('OFF')); break;
     case 'toggle': { const s = getState(); const n = setState({ enabled: !s.enabled }); console.log('✓ translation ' + (n.enabled ? C.green('ON') : C.red('OFF'))); break; }
     case 'backend': {
-      const b = rest[0];
-      if (b !== 'openai' && b !== 'google') { console.error('usage: tt backend <openai|google>'); process.exit(1); }
-      setState({ backend: b }); console.log(C.green('✓') + ' backend = ' + b); break;
+      const id = rest[0];
+      const b = id && getBackend(id);
+      if (!b) {
+        console.error('usage: tt backend <' + listBackends().map((x) => x.id).join('|') + '>');
+        process.exit(1);
+      }
+      setState({ backend: id });
+      console.log(C.green('✓') + ' backend = ' + id + (b.available() ? '' : C.red('  (warning — missing: ' + b.needs + '; will fall back to google)')));
+      break;
+    }
+    case 'backends': backends(); break;
+    case 'lang': {
+      const code = rest[0];
+      if (!code) { const st = getState(); console.log('lang = ' + st.target + C.dim('  (available: ' + listLangs().join(', ') + ')')); break; }
+      const lang = getLang(code);
+      if (!lang) { console.error('unsupported lang: ' + code + '\navailable: ' + listLangs().join(', ')); process.exit(1); }
+      setState({ target: code });
+      console.log(C.green('✓') + ' lang = ' + code + C.dim('  (' + lang.name + ')'));
+      break;
     }
     case 'install': install(); break;
     case 'uninstall': uninstall(); break;

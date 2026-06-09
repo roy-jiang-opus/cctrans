@@ -51,6 +51,10 @@ process.stdin.on('end', async () => {
   const delta = typeof inp.delta === 'string' ? inp.delta : '';
   if (!delta) return showOriginal();
 
+  // Recursion guard: the claude-code backend spawns `claude -p` with
+  // TT_DISABLE=1 so a child Claude process can never re-enter this hook.
+  if (process.env.TT_DISABLE) return showOriginal();
+
   let st;
   try { st = getState(); } catch (e) { return showOriginal(); }
   if (!st.enabled) return showOriginal();

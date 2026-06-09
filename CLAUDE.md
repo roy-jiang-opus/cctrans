@@ -17,10 +17,12 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / >9000 chars → emit nothing → original English.
 
 ## Files
-- `bin/tt.js` — CLI: on/off/toggle/status/backend/install/uninstall/last/test
-- `hook/message-display.js` — the hook entry (stdin → displayContent)
-- `src/interleave.js` — classify lines (prose/code/zh/blank), build interleaved output
-- `src/translate.js` — backends (openai gpt-4o-mini batch / google free) + sha1 cache
+- `bin/tt.js` — CLI: on/off/toggle/status/lang/backend/backends/install/uninstall/last/test
+- `hook/message-display.js` — the hook entry (stdin → displayContent); TT_DISABLE recursion guard
+- `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output
+- `src/langs.js` — language registry (zh-CN/zh-TW/ja/ko/ru): names, per-backend codes, script regexes
+- `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
+- `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`
 - `src/transcript.js` — find + parse session JSONL (used by `tt last`)
 

@@ -1,6 +1,6 @@
 # terminal-translate
 
-给 Claude Code 加一层**中英对照**:每条回复在原始英文行下面自动补一行中文,**就在对话里**,一行英文一行中文。
+给 Claude Code 加一层**双语对照**:每条回复在原始英文行下面自动补一行译文(中/日/韩/俄),**就在对话里**,一行英文一行译文。
 
 ```
 ● I will refactor the auth module to use async tokens.
@@ -47,8 +47,10 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 | 命令 | 作用 |
 |------|------|
 | `tt on` / `tt off` / `tt toggle` | 开 / 关 / 切换翻译 |
-| `tt status` | 查看状态(开关、钩子、后端、密钥) |
-| `tt backend openai\|google` | 切换翻译引擎 |
+| `tt status` | 查看状态(开关、钩子、后端、语言) |
+| `tt lang [code]` | 查看/切换目标语言:`zh-CN` `zh-TW` `ja` `ko` `ru` |
+| `tt backend <id>` | 切换翻译引擎 |
+| `tt backends` | 列出所有引擎及其可用性 |
 | `tt last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
 | `tt test <文本>` | 翻译一段文本,验证引擎 |
 | `tt install` / `tt uninstall` | 注册 / 移除钩子 |
@@ -57,14 +59,32 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 
 ## 翻译后端
 
-| 后端 | 说明 | 速度 | 质量 |
-|------|------|------|------|
-| `openai`(默认) | `gpt-4o-mini`,需 `OPENAI_API_KEY`;保留代码/路径/标识符 | ~1s/段 | 高 |
-| `google` | 免费非官方接口,无需密钥 | ~0.3s/段 | 中 |
+| 后端 | 前提 | 速度 | 质量 | 说明 |
+|------|------|------|------|------|
+| `openai`(有 key 时默认) | `OPENAI_API_KEY` | ~1.4s/段 | 高 | `gpt-4o-mini` 批量行翻译,保留代码/路径 |
+| `anthropic` | `ANTHROPIC_API_KEY` | ~1s/段 | 高 | `claude-haiku-4-5` + structured outputs,严格等长行数组(约 $0.0005/段) |
+| `deepl` | `DEEPL_API_KEY`(免费档 50 万字符/月) | ~0.5s/段 | 高 | 传统 MT 质量天花板;数组接口天然对齐行 |
+| `azure` | `AZURE_TRANSLATOR_KEY`(免费 200 万字符/月) | ~0.5s/段 | 中高 | 可加 `AZURE_TRANSLATOR_REGION` |
+| `google` | 无 | ~0.3s/段 | 中 | 免费非官方接口;**所有后端失败时的兜底** |
+| `claude-code` | `claude` CLI 已登录 | ~3-6s/段 | 高 | 走你的 **Claude 订阅**(`claude -p` headless),零额外费用但明显慢 |
 
-默认在检测到 `OPENAI_API_KEY` 时用 `openai`,否则回退 `google`。想要流式更跟手可 `tt backend google`。
+主后端失败/超时会自动**降级到 google**,任何情况下都不会卡住会话。每行译文按「后端+语言+内容」哈希缓存。
 
-环境变量:`TT_BACKEND`、`TT_OPENAI_MODEL`、`TT_TARGET`(默认 `zh-CN`)、`TT_MARKER`(默认 `↳ `)、`TT_HOME`(状态/缓存目录,默认 `~/.cc-translate`)。
+环境变量:`TT_BACKEND`、`TT_TARGET`(默认 `zh-CN`)、`TT_MARKER`(默认 `↳ `)、`TT_HOME`(默认 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
+
+## 多语言
+
+目标语言支持 **CJK + 俄语**(非拉丁文字,可按 Unicode 区间零成本判断"该行已是目标语言"并跳过):
+
+```bash
+tt lang ja      # 日语
+tt lang ko      # 韩语
+tt lang ru      # 俄语
+tt lang zh-TW   # 繁体中文
+tt lang zh-CN   # 简体中文(默认)
+```
+
+切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
 
 ## 行为与限制(已核实)
 
