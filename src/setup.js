@@ -32,7 +32,7 @@ async function runSetup(opts) {
   };
 
   try {
-    console.log(C.bold('cctranslate setup') + C.dim('  (re-run anytime: cctrans setup)'));
+    console.log(C.bold('cctrans setup') + C.dim('  (re-run anytime: cctrans setup)'));
 
     // 1. Target language
     let lang = opts.lang;

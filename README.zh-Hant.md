@@ -1,4 +1,4 @@
-# cctranslate
+# cctrans
 
 [English](README.md) | [简体中文](README.zh-Hans.md) | **繁體中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 

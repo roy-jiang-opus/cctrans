@@ -104,7 +104,7 @@ function uninstall() {
     if (Object.keys(s.hooks).length === 0) delete s.hooks;
     writeSettings(s);
   }
-  console.log(C.green('✓') + ' removed cctranslate hooks. Restart Claude Code to take effect.');
+  console.log(C.green('✓') + ' removed cctrans hooks. Restart Claude Code to take effect.');
 }
 
 function status() {
@@ -112,7 +112,7 @@ function status() {
   const installed = hookInstalled();
   const b = getBackend(st.backend);
   const lang = getLang(st.target);
-  console.log(C.bold('cctranslate status'));
+  console.log(C.bold('cctrans status'));
   console.log('  enabled : ' + (st.enabled ? C.green('ON') : C.red('OFF')));
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: cctrans install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
