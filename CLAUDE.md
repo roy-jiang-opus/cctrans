@@ -40,6 +40,16 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - No user-facing env vars: settings in state.json, secrets in keys.json. Only internal
   plumbing reads env (CCTRANS_HOME/CCTRANS_TRANSCRIPT for tests, CCTRANS_DISABLE/CCTRANS_DEBUG_STDIN in hooks).
 
+## Releasing
+- npm publishing is automated: `.github/workflows/publish.yml` runs on GitHub Release
+  published, via npm **Trusted Publisher** (OIDC, no token — npmjs settings disallow
+  tokens and require 2FA; provenance is automatic). To release:
+  `npm version patch && git push --follow-tags && gh release create vX.Y.Z --generate-notes`.
+- Don't `npm publish` from a local shell in CI/scripts — tokens are disallowed; local
+  interactive publish with 2FA still works but the workflow is the normal path.
+- GitHub's sidebar "Packages" section can't list npmjs packages (GitHub Packages
+  registry only) — the npm link lives in the repo About homepage + README badges.
+
 ## Testing
 - `node bin/cctrans.js test "<text>"` — engine only.
 - Live TUI: register the hook in a throwaway dir's `.claude/settings.json`, drive
