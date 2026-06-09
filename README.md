@@ -56,15 +56,15 @@ Claude streams English
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # registers the hooks, links cctrans into ~/.local/bin, then runs the setup wizard
 ```
 
 Then **restart Claude Code** (new session) so the hook loads. Send any message — replies become bilingual.
 
 > Requires `~/.local/bin` on your PATH; otherwise use an alias:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## Usage
 

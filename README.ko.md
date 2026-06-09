@@ -56,15 +56,15 @@ Claude가 영어를 스트리밍 출력
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # 훅 등록, cctrans를 ~/.local/bin에 링크 후 setup 마법사 실행
 ```
 
 그다음 **Claude Code를 재시작**(새 세션)하여 훅을 로드합니다. 아무 메시지나 보내면 응답이 이중 언어로 표시됩니다.
 
 > `~/.local/bin`이 PATH에 있어야 합니다; 아니면 별칭을 사용하세요:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## 사용법
 

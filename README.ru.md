@@ -57,15 +57,15 @@ Claude стримит английский текст
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # регистрирует хуки, линкует cctrans в ~/.local/bin, затем запускает мастер настройки
 ```
 
 Затем **перезапустите Claude Code** (новая сессия), чтобы хук загрузился. Отправьте любое сообщение — ответы станут двуязычными.
 
 > Требуется `~/.local/bin` в PATH; иначе используйте алиас:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## Использование
 

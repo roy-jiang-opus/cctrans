@@ -56,15 +56,15 @@ Claude 流式输出英文
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # 注册钩子、链接 cctrans 到 ~/.local/bin,然后运行 setup 向导
 ```
 
 然后**重启 Claude Code**(开新会话)让钩子生效。发任意消息,回复就会双语对照。
 
 > 需要 `~/.local/bin` 在 PATH 里;否则用别名:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## 使用
 

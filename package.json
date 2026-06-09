@@ -6,11 +6,11 @@
   "author": "Roy Jiang",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/roy-jiang-opus/cctranslate.git"
+    "url": "git+https://github.com/roy-jiang-opus/cctrans.git"
   },
-  "homepage": "https://github.com/roy-jiang-opus/cctranslate#readme",
+  "homepage": "https://github.com/roy-jiang-opus/cctrans#readme",
   "bugs": {
-    "url": "https://github.com/roy-jiang-opus/cctranslate/issues"
+    "url": "https://github.com/roy-jiang-opus/cctrans/issues"
   },
   "keywords": [
     "claude-code",

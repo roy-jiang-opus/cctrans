@@ -56,15 +56,15 @@ Claude が英語をストリーミング出力
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # フック登録・cctrans を ~/.local/bin にリンク後、setup ウィザードを実行
 ```
 
 その後 **Claude Code を再起動**(新セッション)してフックを読み込みます。メッセージを送ると、返信がバイリンガルになります。
 
 > `~/.local/bin` が PATH に必要;なければエイリアスを:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## 使い方
 

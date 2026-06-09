@@ -56,15 +56,15 @@ Claude 串流輸出英文
 npm install -g cctrans && cctrans install
 
 # from source:
-git clone https://github.com/roy-jiang-opus/cctranslate.git
-cd cctranslate
+git clone https://github.com/roy-jiang-opus/cctrans.git
+cd cctrans
 node bin/cctrans.js install      # 註冊鉤子、連結 cctrans 到 ~/.local/bin,然後執行 setup 精靈
 ```
 
 接著**重新啟動 Claude Code**(開新工作階段)讓鉤子生效。送出任意訊息,回覆就會雙語對照。
 
 > 需要 `~/.local/bin` 在 PATH 中;否則使用別名:
-> `alias cctrans='node /path/to/cctranslate/bin/cctrans.js'`
+> `alias cctrans='node /path/to/cctrans/bin/cctrans.js'`
 
 ## 使用
 
