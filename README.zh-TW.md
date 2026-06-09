@@ -1,8 +1,8 @@
 # terminal-translate
 
-[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
-為 Claude Code 加上一層**雙語對照**:每則回覆會在原始英文行下方自動補上一行譯文(中/日/韓/俄),**就在對話裡**,一行英文一行譯文。
+為 Claude Code 加上一層**雙語對照**:每則回覆會在原始英文行下方自動補上一行譯文(中/日/韓/俄/印地),**就在對話裡**,一行英文一行譯文。
 
 ```
 ● I will refactor the auth module to use async tokens.
@@ -51,7 +51,7 @@ node bin/tt.js install      # 將鉤子註冊到 ~/.claude/settings.json,並把 
 |------|------|
 | `tt on` / `tt off` / `tt toggle` | 開 / 關 / 切換翻譯 |
 | `tt status` | 檢視狀態(開關、鉤子、後端、語言) |
-| `tt lang [code]` | 檢視/切換目標語言:`zh-CN` `zh-TW` `ja` `ko` `ru` |
+| `tt lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
 | `tt backend <id>` | 切換翻譯引擎 |
 | `tt backends` | 列出所有引擎及其可用性 |
 | `tt last [N]` | 把最近(或往前第 N 則)回覆翻譯到終端機 |
@@ -73,21 +73,22 @@ node bin/tt.js install      # 將鉤子註冊到 ~/.claude/settings.json,並把 
 
 主後端失敗/逾時會自動**降級到 google**,任何情況下都不會卡住工作階段。每行譯文按「後端+語言+內容」雜湊快取。
 
-環境變數:`TT_BACKEND`、`TT_TARGET`(預設 `zh-CN`)、`TT_MARKER`(預設 `↳ `)、`TT_HOME`(預設 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
+環境變數:`TT_BACKEND`、`TT_TARGET`(預設 `zh-Hans`)、`TT_MARKER`(預設 `↳ `)、`TT_HOME`(預設 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
 
 ## 多語言
 
-目標語言支援 **CJK + 俄語**(非拉丁文字,可按 Unicode 區間零成本判斷「該行已是目標語言」並跳過):
+目標語言支援 **CJK + 俄語 + 印地語**(非拉丁文字,可按 Unicode 區間零成本判斷「該行已是目標語言」並跳過):
 
 ```bash
-tt lang ja      # 日語
-tt lang ko      # 韓語
-tt lang ru      # 俄語
-tt lang zh-TW   # 繁體中文
-tt lang zh-CN   # 簡體中文(預設)
+tt lang ja       # 日語
+tt lang ko       # 韓語
+tt lang ru       # 俄語
+tt lang hi       # 印地語
+tt lang zh-Hant  # 繁體中文
+tt lang zh-Hans  # 簡體中文(預設)
 ```
 
-切換語言立即生效(鉤子每次呼叫都讀取狀態),不同語言的快取相互獨立。
+中文採用 BCP-47 **文字碼**(`zh-Hans`/`zh-Hant`)——繁體是文字系統而非地區;`zh-CN` / `zh-TW` 仍可作為別名使用,會自動正規化。切換語言立即生效(鉤子每次呼叫都讀取狀態),不同語言的快取相互獨立。
 
 ## 行為與限制(已核實)
 

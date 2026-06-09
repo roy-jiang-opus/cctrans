@@ -20,7 +20,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `bin/tt.js` — CLI: on/off/toggle/status/lang/backend/backends/install/uninstall/last/test
 - `hook/message-display.js` — the hook entry (stdin → displayContent); TT_DISABLE recursion guard
 - `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output
-- `src/langs.js` — language registry (zh-CN/zh-TW/ja/ko/ru): names, per-backend codes, script regexes
+- `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`

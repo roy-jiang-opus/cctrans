@@ -1,8 +1,8 @@
 # terminal-translate
 
-[English](README.md) | **简体中文** | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md)
+[English](README.md) | **简体中文** | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md)
 
-给 Claude Code 加一层**双语对照**:每条回复在原始英文行下面自动补一行译文(中/日/韩/俄),**就在对话里**,一行英文一行译文。
+给 Claude Code 加一层**双语对照**:每条回复在原始英文行下面自动补一行译文(中/日/韩/俄/印地),**就在对话里**,一行英文一行译文。
 
 ```
 ● I will refactor the auth module to use async tokens.
@@ -51,7 +51,7 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 |------|------|
 | `tt on` / `tt off` / `tt toggle` | 开 / 关 / 切换翻译 |
 | `tt status` | 查看状态(开关、钩子、后端、语言) |
-| `tt lang [code]` | 查看/切换目标语言:`zh-CN` `zh-TW` `ja` `ko` `ru` |
+| `tt lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
 | `tt backend <id>` | 切换翻译引擎 |
 | `tt backends` | 列出所有引擎及其可用性 |
 | `tt last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
@@ -73,21 +73,22 @@ node bin/tt.js install      # 注册钩子到 ~/.claude/settings.json,并把 tt 
 
 主后端失败/超时会自动**降级到 google**,任何情况下都不会卡住会话。每行译文按「后端+语言+内容」哈希缓存。
 
-环境变量:`TT_BACKEND`、`TT_TARGET`(默认 `zh-CN`)、`TT_MARKER`(默认 `↳ `)、`TT_HOME`(默认 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
+环境变量:`TT_BACKEND`、`TT_TARGET`(默认 `zh-Hans`)、`TT_MARKER`(默认 `↳ `)、`TT_HOME`(默认 `~/.cc-translate`)、`TT_OPENAI_MODEL`、`TT_ANTHROPIC_MODEL`、`AZURE_TRANSLATOR_ENDPOINT`。
 
 ## 多语言
 
-目标语言支持 **CJK + 俄语**(非拉丁文字,可按 Unicode 区间零成本判断"该行已是目标语言"并跳过):
+目标语言支持 **CJK + 俄语 + 印地语**(非拉丁文字,可按 Unicode 区间零成本判断"该行已是目标语言"并跳过):
 
 ```bash
-tt lang ja      # 日语
-tt lang ko      # 韩语
-tt lang ru      # 俄语
-tt lang zh-TW   # 繁体中文
-tt lang zh-CN   # 简体中文(默认)
+tt lang ja       # 日语
+tt lang ko       # 韩语
+tt lang ru       # 俄语
+tt lang hi       # 印地语
+tt lang zh-Hant  # 繁体中文
+tt lang zh-Hans  # 简体中文(默认)
 ```
 
-切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
+中文采用 BCP-47 **文字码**(`zh-Hans`/`zh-Hant`)——繁体是文字系统而非地区;`zh-CN` / `zh-TW` 仍可作为别名使用,会自动归一化。切换语言即刻生效(钩子每次调用都读状态),不同语言的缓存相互独立。
 
 ## 行为与限制(已核实)
 

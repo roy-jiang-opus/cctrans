@@ -17,7 +17,7 @@ const { getState, setState, STATE_FILE } = require('../src/config');
 const { buildDisplayContent } = require('../src/interleave');
 const { findTranscript, extractReply } = require('../src/transcript');
 const { listBackends, getBackend } = require('../src/backends');
-const { getLang, listLangs } = require('../src/langs');
+const { getLang, listLangs, normalizeLang } = require('../src/langs');
 
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
@@ -140,7 +140,7 @@ function help() {
 ${C.bold('Control')}
   tt on | off | toggle      turn the inline translation on/off
   tt status                 show current state
-  tt lang [code]            show/set target language (zh-CN, zh-TW, ja, ko, ru)
+  tt lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
   tt backend <id>           choose translation engine
   tt backends               list engines + availability
 
@@ -175,11 +175,12 @@ async function main() {
     case 'backends': backends(); break;
     case 'lang': {
       const code = rest[0];
-      if (!code) { const st = getState(); console.log('lang = ' + st.target + C.dim('  (available: ' + listLangs().join(', ') + ')')); break; }
+      if (!code) { const st = getState(); console.log('lang = ' + st.target + C.dim('  (available: ' + listLangs().join(', ') + '; aliases: zh-CN, zh-TW)')); break; }
       const lang = getLang(code);
-      if (!lang) { console.error('unsupported lang: ' + code + '\navailable: ' + listLangs().join(', ')); process.exit(1); }
-      setState({ target: code });
-      console.log(C.green('✓') + ' lang = ' + code + C.dim('  (' + lang.name + ')'));
+      if (!lang) { console.error('unsupported lang: ' + code + '\navailable: ' + listLangs().join(', ') + ' (aliases: zh-CN, zh-TW)'); process.exit(1); }
+      const canonical = normalizeLang(code);
+      setState({ target: canonical });
+      console.log(C.green('✓') + ' lang = ' + canonical + C.dim('  (' + lang.name + (canonical !== code ? ', normalized from ' + code : '') + ')'));
       break;
     }
     case 'install': install(); break;

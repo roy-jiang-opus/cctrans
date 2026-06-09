@@ -1,5 +1,5 @@
 {
-  "name": "terminal-translate",
+  "name": "cctranslate",
   "version": "0.1.0",
   "private": true,
   "description": "Hotkey bilingual (EN->ZH) overlay for Claude Code conversation output. Reads the live session transcript (sidecar), translates via a separate cheap backend, and shows interleaved EN/ZH in a tmux popup. Non-destructive, zero history pollution, zero main-loop tokens.",

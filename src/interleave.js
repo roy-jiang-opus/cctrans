@@ -57,7 +57,7 @@ async function buildDisplayContent(rawDelta, opts) {
   const hardBreak = opts.hardBreak === true;
   const cap = opts.cap || 9000;
 
-  const target = opts.target || 'zh-CN';
+  const target = opts.target || 'zh-Hans';
   const lines = String(rawDelta).split('\n');
   const { plan, inFence } = classify(lines, opts.inFence, target);
 

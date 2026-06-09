@@ -10,6 +10,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { CACHE_DIR, ensureDirs } = require('./config');
 const { fallbackChain } = require('./backends');
+const { normalizeLang } = require('./langs');
 
 function cacheKey(line, target, backend) {
   return crypto.createHash('sha1').update(backend + '|' + target + '|' + line).digest('hex');
@@ -38,7 +39,9 @@ function withTimeout(promise, ms) {
 // backend with fallback. opts: {target, backend, model, timeoutMs}
 async function translateLines(lines, opts) {
   opts = opts || {};
-  const target = opts.target || 'zh-CN';
+  // Normalize aliases (zh-CN -> zh-Hans, zh-TW -> zh-Hant) so cache keys are
+  // canonical regardless of how the user spelled the code.
+  const target = normalizeLang(opts.target || 'zh-Hans');
   const primary = opts.backend || 'google';
   const timeoutMs = opts.timeoutMs || 8000;
 

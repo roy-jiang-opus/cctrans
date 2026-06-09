@@ -20,7 +20,7 @@ function defaults() {
   return {
     enabled: true, // default ON: every reply shows bilingual until toggled off
     backend: process.env.TT_BACKEND || (process.env.OPENAI_API_KEY ? 'openai' : 'google'),
-    target: process.env.TT_TARGET || 'zh-CN',
+    target: process.env.TT_TARGET || 'zh-Hans',
     model: process.env.TT_OPENAI_MODEL || 'gpt-4o-mini',
     marker: process.env.TT_MARKER || '↳ ', // prefix on each Chinese line
   };
