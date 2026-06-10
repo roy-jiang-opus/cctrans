@@ -48,7 +48,12 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - npm publishing is automated: `.github/workflows/publish.yml` runs on GitHub Release
   published, via npm **Trusted Publisher** (OIDC, no token — npmjs settings disallow
   tokens and require 2FA; provenance is automatic). To release:
-  `npm version patch && git push --follow-tags && gh release create vX.Y.Z --generate-notes`.
+  1. `npm version patch && git push --follow-tags`
+  2. Draft release notes following `.github/RELEASE_TEMPLATE.md`: summarize
+     `git log vPREV..vNEW` into user-visible bullets (omit empty sections; skip
+     routine README-language syncs). Don't use bare `--generate-notes` — commits
+     go straight to main, so without PRs it produces only the changelog link.
+  3. `gh release create vX.Y.Z --notes-file <notes.md>` — this triggers the publish.
 - Don't `npm publish` from a local shell in CI/scripts — tokens are disallowed; local
   interactive publish with 2FA still works but the workflow is the normal path.
 - GitHub's sidebar "Packages" section can't list npmjs packages (GitHub Packages
