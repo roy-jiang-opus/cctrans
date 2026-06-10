@@ -40,7 +40,7 @@ Claude Code の**バイリンガル表示オーバーレイ**:各英語行の下
 ## 🚀 クイックスタート
 
 ```bash
-npm install -g cctrans && cctrans install
+npm install -g cctrans@latest && cctrans install
 ```
 
 インストールがフックを登録し、セットアップを案内します(言語 → 表示モード → バックエンド → API キー → 即時検証)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。

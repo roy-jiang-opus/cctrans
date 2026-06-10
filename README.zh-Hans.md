@@ -40,7 +40,7 @@
 ## 🚀 快速开始
 
 ```bash
-npm install -g cctrans && cctrans install
+npm install -g cctrans@latest && cctrans install
 ```
 
 安装会注册钩子并引导你完成配置(语言 → 显示模式 → 后端 → API key → 实时验证)。然后**重启 Claude Code**——回复变成双语。随时在 Claude Code 输入框里输入 `!cctrans off` / `!cctrans on` 开关(`!` 是 CC 内置 bash 模式,不调用模型、不花 token)。

@@ -40,7 +40,7 @@ Claude Code के लिए एक **द्विभाषी ओवरले**
 ## 🚀 त्वरित शुरुआत
 
 ```bash
-npm install -g cctrans && cctrans install
+npm install -g cctrans@latest && cctrans install
 ```
 
 इंस्टॉल हुक पंजीकृत करता है और सेटअप कराता है (भाषा → प्रदर्शन मोड → बैकएंड → API कुंजी → लाइव सत्यापन)। फिर **Claude Code पुनः आरंभ करें** — जवाब द्विभाषी हो जाएँगे। Claude Code के इनपुट बॉक्स में `!cctrans off` / `!cctrans on` टाइप करके कभी भी टॉगल करें (`!` CC का बिल्ट-इन bash मोड है — कोई मॉडल कॉल नहीं, कोई टोकन नहीं)।

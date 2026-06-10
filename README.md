@@ -40,7 +40,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 ## 🚀 Quick start
 
 ```bash
-npm install -g cctrans && cctrans install
+npm install -g cctrans@latest && cctrans install
 ```
 
 The install registers the hooks and walks you through setup (language → display mode → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
