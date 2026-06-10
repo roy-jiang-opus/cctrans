@@ -1,7 +1,7 @@
 {
   "name": "cctrans",
   "version": "0.4.0",
-  "description": "Bilingual inline translation overlay for Claude Code: a translated line (zh/ja/ko/ru/hi) under each English line, right in the conversation — non-destructive, zero main-loop tokens.",
+  "description": "Save up to 67% of Claude Code tokens: work in your language, billed 100% in English — a display-only translated line (zh/ja/ko/ru/hi) under each English line, zero main-loop tokens.",
   "license": "MIT",
   "author": "Roy Jiang",
   "repository": {

@@ -2,7 +2,7 @@
 
 # cctrans
 
-**Claude Code を母語で読む——トークンは英語価格のまま。**
+**トークンを最大 67% 節約：Claude Code を母語で、課金は 100% 英語のまま。**
 
 [![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
 [![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
@@ -43,7 +43,9 @@ Claude Code の**バイリンガル表示オーバーレイ**:各英語行の下
 npm install -g cctrans && cctrans install
 ```
 
-インストールがフックを登録し、セットアップを案内します(言語 → バックエンド → API キー → 即時検証)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。
+インストールがフックを登録し、セットアップを案内します(言語 → 表示モード → バックエンド → API キー → 即時検証)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。
+
+**すでにインストール済み?** `npm update -g cctrans` で更新——次の返信から反映されます(フックはチャンクごとに毎回ディスクから実行されます)。設定、キー、登録済みフックはそのまま、再セットアップは不要です。
 
 <details>
 <summary>ソースからインストール</summary>

@@ -2,7 +2,7 @@
 
 # cctrans
 
-**用母語讀 Claude Code——token 按英文計費。**
+**省下最多 67% 的 token：用母語讀 Claude Code，token 100% 按英文計費。**
 
 [![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
 [![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
@@ -43,7 +43,9 @@
 npm install -g cctrans && cctrans install
 ```
 
-安裝會註冊鉤子並引導你完成設定(語言 → 後端 → API key → 即時驗證)。然後**重新啟動 Claude Code**——回覆變成雙語。隨時在 Claude Code 輸入框輸入 `!cctrans off` / `!cctrans on` 開關(`!` 是 CC 內建 bash 模式,不呼叫模型、不花 token)。
+安裝會註冊鉤子並引導你完成設定(語言 → 顯示模式 → 後端 → API key → 即時驗證)。然後**重新啟動 Claude Code**——回覆變成雙語。隨時在 Claude Code 輸入框輸入 `!cctrans off` / `!cctrans on` 開關(`!` 是 CC 內建 bash 模式,不呼叫模型、不花 token)。
+
+**已經裝過?** 用 `npm update -g cctrans` 更新——從下一則回覆起生效(鉤子每個分塊都從磁碟重新執行);你的設定、金鑰和已註冊的鉤子原樣保留,無需重新設定。
 
 <details>
 <summary>從原始碼安裝</summary>

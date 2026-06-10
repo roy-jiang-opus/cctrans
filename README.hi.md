@@ -2,7 +2,7 @@
 
 # cctrans
 
-**Claude Code को अपनी भाषा में पढ़ें — टोकन अंग्रेज़ी दर पर चुकाएँ।**
+**67% तक टोकन बचाएँ: Claude Code अपनी भाषा में, बिलिंग 100% अंग्रेज़ी में।**
 
 [![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
 [![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
@@ -43,7 +43,9 @@ Claude Code के लिए एक **द्विभाषी ओवरले**
 npm install -g cctrans && cctrans install
 ```
 
-इंस्टॉल हुक पंजीकृत करता है और सेटअप कराता है (भाषा → बैकएंड → API कुंजी → लाइव सत्यापन)। फिर **Claude Code पुनः आरंभ करें** — जवाब द्विभाषी हो जाएँगे। Claude Code के इनपुट बॉक्स में `!cctrans off` / `!cctrans on` टाइप करके कभी भी टॉगल करें (`!` CC का बिल्ट-इन bash मोड है — कोई मॉडल कॉल नहीं, कोई टोकन नहीं)।
+इंस्टॉल हुक पंजीकृत करता है और सेटअप कराता है (भाषा → प्रदर्शन मोड → बैकएंड → API कुंजी → लाइव सत्यापन)। फिर **Claude Code पुनः आरंभ करें** — जवाब द्विभाषी हो जाएँगे। Claude Code के इनपुट बॉक्स में `!cctrans off` / `!cctrans on` टाइप करके कभी भी टॉगल करें (`!` CC का बिल्ट-इन bash मोड है — कोई मॉडल कॉल नहीं, कोई टोकन नहीं)।
+
+**पहले से इंस्टॉल है?** `npm update -g cctrans` से अपडेट करें — यह अगले जवाब से ही लागू हो जाता है (हुक हर चंक पर डिस्क से ताज़ा चलता है); आपकी सेटिंग्स, कुंजियाँ और पंजीकृत हुक अछूते रहते हैं, दोबारा सेटअप की ज़रूरत नहीं।
 
 <details>
 <summary>सोर्स से इंस्टॉल</summary>

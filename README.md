@@ -2,7 +2,7 @@
 
 # cctrans
 
-**Read Claude Code in your language — pay tokens in English.**
+**Save up to 67% of your tokens: Claude Code in your language, billed 100% in English.**
 
 [![npm version](https://img.shields.io/npm/v/cctrans?color=cb3837&logo=npm)](https://www.npmjs.com/package/cctrans)
 [![npm downloads](https://img.shields.io/npm/dm/cctrans?color=blue)](https://www.npmjs.com/package/cctrans)
@@ -43,7 +43,9 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 npm install -g cctrans && cctrans install
 ```
 
-The install registers the hooks and walks you through setup (language → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
+The install registers the hooks and walks you through setup (language → display mode → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
+
+**Already installed?** Update with `npm update -g cctrans` — it takes effect from the next reply (the hook runs fresh from disk on every chunk); your settings, keys, and registered hooks are untouched, no re-setup needed.
 
 <details>
 <summary>Install from source</summary>
