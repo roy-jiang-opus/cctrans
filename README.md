@@ -30,7 +30,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 - 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
 - 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
 - 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
-- ⌨️ **Input translation** — type prompts in your language; the model works from English (`cctrans input on`)
+- ⌨️ **Input translation (beta)** — type prompts in your language; the model works — and replies — in English (`cctrans input on`)
 - 🌏 **6 target languages** — `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
 - 🔌 **6 backends with auto-fallback** — OpenAI / Anthropic / DeepL / Azure / free Google / your own Claude subscription
 - 🔒 **Key isolation** — API keys live only in a chmod-600 file; shell env vars are never read
@@ -103,7 +103,8 @@ Claude streams English
 | `cctrans backends` | list engines and their availability |
 | `cctrans setup` | interactive wizard: language, backend, API keys |
 | `cctrans key [id] [value]` | manage API keys in `~/.cc-translate/keys.json` |
-| `cctrans input on` / `cctrans input off` | translate non-English input to English (sent as context) |
+| `cctrans input on` / `cctrans input off` | **(beta)** translate non-English input to English (sent as context) |
+| `cctrans input threshold <n>` | non-Latin characters that trigger input translation (default 4) |
 | `cctrans last [N]` | translate the latest (or N-back) reply to the terminal |
 | `cctrans test <text>` | translate ad-hoc text to verify the engine |
 | `cctrans install` / `cctrans uninstall` | register / remove the hooks |
@@ -140,9 +141,11 @@ cctrans lang zh-Hans  # Simplified Chinese (default)
 
 Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chinese is a script, not a region; `zh-CN` / `zh-TW` are accepted as aliases and normalized. Switching takes effect immediately (the hook re-reads state on every call); each language has its own cache.
 
-## ⌨️ Input translation
+## ⌨️ Input translation (beta)
 
-`cctrans input on` enables a `UserPromptSubmit` hook: when your prompt is mostly non-English, an English translation is attached as context the model treats as the canonical instruction — you keep typing in your language, the model works in English. (Verified on CC 2.1.169: hooks cannot rewrite the prompt itself, so the original stays in history with the English alongside.) English prompts pass through untouched; any error falls back to sending your prompt as-is.
+`cctrans input on` enables a `UserPromptSubmit` hook: when your prompt contains enough non-Latin text (default 4+ characters — an absolute count, so file paths and identifiers never dilute the trigger; tune with `cctrans input threshold <n>`), an English translation is attached as context the model treats as the canonical instruction, and the model is asked to **reply in English** — so the bilingual overlay keeps working and your conversation context stays English end-to-end. (Verified on CC 2.1.169: hooks cannot rewrite the prompt itself, so the original stays in history with the English alongside.) English prompts pass through untouched; any error falls back to sending your prompt as-is.
+
+> **Beta**: the translation call blocks prompt submission for ~0.5–1.5 s per non-English prompt. Off by default; the setup wizard asks once. Feedback → [issues](https://github.com/roy-jiang-opus/cctrans/issues).
 
 ## 📏 Behavior & limits (verified)
 

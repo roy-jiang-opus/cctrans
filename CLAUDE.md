@@ -19,13 +19,13 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 ## Files
 - `bin/cctrans.js` — CLI: on/off/toggle/status/lang/backend/backends/setup/key/input/install/uninstall/last/test
 - `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard
-- `hook/user-prompt-submit.js` — input translation hook (non-English prompt → English additionalContext)
+- `hook/user-prompt-submit.js` — input translation hook (beta): non-English prompt → English additionalContext + "respond in English" instruction. Triggers on an ABSOLUTE non-Latin char count (`inputMinChars`, default 4; `cctrans input threshold <n>`) — never a ratio (paths/identifiers dilute ratios below any threshold; measured 0.13–0.16 on typical code-mixed prompts).
 - `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output
 - `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600), the ONLY key source — env vars are never read. Must NOT require config.js (config requires keys for the default backend).
-- `src/setup.js` — interactive wizard (lang → key import → backend → key entry → live verify)
+- `src/setup.js` — interactive wizard (lang → backend → key entry → input translation y/N → live verify); flags --lang --backend --key --input --yes
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`
 - `src/transcript.js` — find + parse session JSONL (used by `cctrans last`)
 
@@ -37,6 +37,10 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   2.1.170 binaries) allow only `additionalContext` + block — hooks CANNOT rewrite the
   prompt. Input translation therefore attaches the English as context; the original
   stays in history.
+- The input-translation additionalContext MUST instruct the model to respond in
+  English (verified live via `claude -p` A/B on 2026-06-10): without it the model
+  mirrors the user's language, the EN→ZH overlay never fires, and the context goes
+  non-English; with it the model replies in English and the overlay renders bilingual.
 - No user-facing env vars: settings in state.json, secrets in keys.json. Only internal
   plumbing reads env (CCTRANS_HOME/CCTRANS_TRANSCRIPT for tests, CCTRANS_DISABLE/CCTRANS_DEBUG_STDIN in hooks).
 

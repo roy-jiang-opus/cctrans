@@ -16,7 +16,7 @@
 
 const { getState } = require('../src/config');
 const { translateLines } = require('../src/translate');
-const { nonLatinRatio } = require('../src/langs');
+const { nonLatinCount } = require('../src/langs');
 
 function passThrough() { process.exit(0); }
 
@@ -37,8 +37,11 @@ process.stdin.on('end', async () => {
   try { st = getState(); } catch (e) { return passThrough(); }
   if (!st.inputEn) return passThrough();
 
-  // Only act on prompts that are substantially non-English.
-  if (nonLatinRatio(prompt) < 0.2) return passThrough();
+  // Trigger on an absolute count of non-Latin chars (configurable:
+  // `cctrans input threshold <n>`), NOT a ratio — coding prompts are mostly
+  // Latin paths/identifiers, which would dilute a ratio below any threshold.
+  const min = Number.isInteger(st.inputMinChars) && st.inputMinChars > 0 ? st.inputMinChars : 4;
+  if (nonLatinCount(prompt) < min) return passThrough();
 
   const guard = setTimeout(passThrough, 9000);
   try {
@@ -52,7 +55,8 @@ process.stdin.on('end', async () => {
         hookEventName: 'UserPromptSubmit',
         additionalContext:
           'English translation of the user\'s prompt (translated by a local tool; ' +
-          'treat it as the canonical instruction):\n' + en,
+          'treat it as the canonical instruction). Respond in English — a local ' +
+          'overlay renders your reply bilingually for the user:\n' + en,
       },
     }));
     process.exit(0);

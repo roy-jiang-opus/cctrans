@@ -117,7 +117,7 @@ function status() {
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: cctrans install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
   console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: cctrans lang)')));
-  console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (prompt -> English; toggle: cctrans input on|off)'));
+  console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (beta; prompt -> English; toggle: cctrans input on|off; triggers at ' + st.inputMinChars + '+ non-Latin chars)'));
   console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: cctrans key)'));
   console.log('  state   : ' + STATE_FILE);
 }
@@ -179,7 +179,8 @@ function help() {
 
 ${C.bold('Control')}
   cctrans on | off | toggle      turn the inline translation on/off
-  cctrans input on | off         translate non-English input to English (as context)
+  cctrans input on | off         (beta) translate non-English input to English (as context)
+  cctrans input threshold <n>    non-Latin chars that trigger input translation (default 4)
   cctrans status                 show current state
   cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
   cctrans backend <id>           choose translation engine
@@ -188,7 +189,7 @@ ${C.bold('Control')}
 ${C.bold('Setup')}
   cctrans install                register hooks (+ link cctrans), then run setup
   cctrans setup                  interactive wizard: language, backend, API keys
-                            (flags: --lang --backend --key --yes)
+                            (flags: --lang --backend --key --input --yes)
   cctrans key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
   cctrans uninstall              remove the hooks
@@ -242,6 +243,7 @@ async function main() {
         lang: flag('--lang'),
         backend: flag('--backend'),
         key: flag('--key'),
+        input: flag('--input'),
         yes: rest.includes('--yes'),
       });
       break;
@@ -251,8 +253,17 @@ async function main() {
       const sub = rest[0];
       if (sub === 'on' || sub === 'off') setState({ inputEn: sub === 'on' });
       else if (sub === 'toggle') setState({ inputEn: !getState().inputEn });
+      else if (sub === 'threshold' && rest[1] !== undefined) {
+        const n = parseInt(rest[1], 10);
+        if (!Number.isInteger(n) || n < 1) {
+          console.error('usage: cctrans input threshold <n>   (non-Latin chars in a prompt that trigger translation; n >= 1)');
+          process.exit(1);
+        }
+        setState({ inputMinChars: n });
+      }
       const st = getState();
-      console.log('input translation (prompt -> English): ' + (st.inputEn ? C.green('ON') : C.red('OFF')) +
+      console.log('input translation ' + C.dim('(beta)') + ' (prompt -> English): ' + (st.inputEn ? C.green('ON') : C.red('OFF')) +
+        C.dim('  threshold: ' + st.inputMinChars + ' non-Latin chars (set: cctrans input threshold <n>)') +
         (inputHookInstalled() ? '' : C.red('  (hook not installed — run: cctrans install)')));
       break;
     }

@@ -52,10 +52,10 @@ const LANGS = {
 // supported non-English languages?" Used by the input-translation hook.
 const NON_LATIN = /[一-鿿㐀-䶿぀-ゟ゠-ヿ가-힯ᄀ-ᇿЀ-ӿऀ-ॿ]/g;
 
-function nonLatinRatio(text) {
-  const hits = (text.match(NON_LATIN) || []).length;
-  const nonspace = text.replace(/\s/g, '').length;
-  return nonspace === 0 ? 0 : hits / nonspace;
+// Absolute count, not a ratio: coding prompts are full of Latin paths and
+// identifiers that would dilute any ratio below a usable threshold.
+function nonLatinCount(text) {
+  return (text.match(NON_LATIN) || []).length;
 }
 
 // Region-code (and bare-zh) aliases -> canonical script codes.
@@ -91,4 +91,4 @@ function isProbablyTarget(line, code) {
   return nonspace > 0 && hits / nonspace >= 0.3;
 }
 
-module.exports = { LANGS, getLang, listLangs, isProbablyTarget, normalizeLang, nonLatinRatio };
+module.exports = { LANGS, getLang, listLangs, isProbablyTarget, normalizeLang, nonLatinCount };

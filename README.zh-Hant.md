@@ -30,7 +30,7 @@
 - 🪞 **行內雙語顯示** —— 譯文隨回覆串流出現在每行英文下方,就在對話裡
 - 🧾 **非破壞性** —— 轉錄與模型上下文保持純英文;skills、文件、程式碼不受影響
 - 🆓 **主對話零 token** —— 翻譯走獨立低成本後端(也有免費選項),完全在 Claude Code 工作階段之外
-- ⌨️ **輸入翻譯** —— 用母語打字,模型按英文工作(`cctrans input on`)
+- ⌨️ **輸入翻譯(beta)** —— 用母語打字,模型按英文工作、按英文回覆(`cctrans input on`)
 - 🌏 **6 種目標語言** —— `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
 - 🔌 **6 個後端自動降級** —— OpenAI / Anthropic / DeepL / Azure / 免費 Google / 你自己的 Claude 訂閱
 - 🔒 **金鑰隔離** —— API key 只存在 chmod-600 的檔案裡,從不讀終端機環境變數
@@ -103,7 +103,8 @@ Claude 串流輸出英文
 | `cctrans backends` | 列出所有引擎及其可用性 |
 | `cctrans setup` | 互動式精靈:語言、後端、API key |
 | `cctrans key [id] [value]` | 管理 `~/.cc-translate/keys.json` 中的 API key |
-| `cctrans input on` / `cctrans input off` | 把非英文輸入翻譯成英文(作為上下文傳給模型) |
+| `cctrans input on` / `cctrans input off` | **(beta)** 把非英文輸入翻譯成英文(作為上下文傳給模型) |
+| `cctrans input threshold <n>` | 觸發輸入翻譯的非拉丁字元數(預設 4) |
 | `cctrans last [N]` | 把最近(或往前第 N 則)回覆翻譯到終端機 |
 | `cctrans test <文字>` | 翻譯一段文字,驗證引擎 |
 | `cctrans install` / `cctrans uninstall` | 註冊 / 移除鉤子 |
@@ -140,9 +141,11 @@ cctrans lang zh-Hans  # 簡體中文(預設)
 
 中文採用 BCP-47 **文字碼**(`zh-Hans`/`zh-Hant`)——繁體是文字系統而非地區;`zh-CN` / `zh-TW` 仍可作為別名使用,會自動正規化。切換語言立即生效(鉤子每次呼叫都讀取狀態),不同語言的快取相互獨立。
 
-## ⌨️ 輸入翻譯
+## ⌨️ 輸入翻譯(beta)
 
-`cctrans input on` 啟用 `UserPromptSubmit` 鉤子:當你的輸入大多是非英文時,英文譯文會作為上下文附給模型並被視為權威指令——你繼續用母語打字,模型按英文工作。(已在 CC 2.1.169 核實:鉤子無法改寫 prompt 本身,所以原文仍在歷史中,英文隨附。)英文輸入原樣通過;任何錯誤都安全回退為原樣送出。
+`cctrans input on` 啟用 `UserPromptSubmit` 鉤子:當你的輸入包含足夠多的非拉丁字元時(預設 4 個以上——按絕對數量計,檔案路徑和識別字不會稀釋觸發條件;用 `cctrans input threshold <n>` 調整),英文譯文會作為上下文附給模型並被視為權威指令,同時要求模型**用英文回覆**——這樣雙語 overlay 持續生效,對話上下文全程保持英文。(已在 CC 2.1.169 核實:鉤子無法改寫 prompt 本身,所以原文仍在歷史中,英文隨附。)英文輸入原樣通過;任何錯誤都安全回退為原樣送出。
+
+> **Beta**:翻譯呼叫會在每條非英文輸入送出前阻塞約 0.5–1.5 秒。預設關閉;setup 精靈會詢問一次。回饋 → [issues](https://github.com/roy-jiang-opus/cctrans/issues)。
 
 ## 📏 行為與限制(已核實)
 

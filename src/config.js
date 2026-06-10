@@ -29,7 +29,8 @@ function defaults() {
     anthropicModel: 'claude-haiku-4-5', // anthropic backend model
     azureEndpoint: 'https://api.cognitive.microsofttranslator.com',
     marker: '↳ ', // prefix on each translated line
-    inputEn: false, // input translation (prompt -> English) off until enabled
+    inputEn: false, // input translation (beta, prompt -> English) off until enabled
+    inputMinChars: 4, // non-Latin chars in a prompt that trigger input translation
   };
 }
 
@@ -52,6 +53,7 @@ function setState(patch) {
     azureEndpoint: next.azureEndpoint,
     marker: next.marker,
     inputEn: next.inputEn,
+    inputMinChars: next.inputMinChars,
   };
   const tmp = STATE_FILE + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(persist, null, 2));

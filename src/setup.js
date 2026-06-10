@@ -1,8 +1,8 @@
 'use strict';
-// Interactive setup wizard: language -> backend -> API-key entry -> live
-// verification -> save. Re-runnable via `cctrans setup`; non-interactive with
-// flags (--lang, --backend, --key, --yes). Keys go to keys.json only — the
-// shell environment is never read.
+// Interactive setup wizard: language -> backend -> API-key entry -> input
+// translation (beta) -> live verification -> save. Re-runnable via `cctrans
+// setup`; non-interactive with flags (--lang, --backend, --key, --input,
+// --yes). Keys go to keys.json only — the shell environment is never read.
 
 const readline = require('node:readline/promises');
 const { getState, setState } = require('./config');
@@ -73,12 +73,24 @@ async function runSetup(opts) {
       }
     }
 
-    // 4. Save config
-    setState({ target: lang, backend });
+    // 4. Input translation (beta, opt-in): prompt -> English as context
+    let inputEn = typeof opts.input === 'string' ? opts.input === 'on' : getState().inputEn;
+    if (opts.input === undefined && rl) {
+      console.log('\n' + C.bold('Input translation') + ' ' + C.dim('(beta)') +
+        ' — type prompts in your language; an English translation is\n' +
+        'attached as context and the model is asked to reply in English (the original\n' +
+        'prompt stays in your history; adds ~0.5–1.5s per non-English prompt).');
+      const a = await ask('Enable input translation? (y/N)', inputEn ? 'y' : 'n');
+      inputEn = /^y(es)?$/i.test(a);
+    }
+
+    // 5. Save config
+    setState({ target: lang, backend, inputEn });
     console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), backend=' + backend +
+      ', input=' + (inputEn ? 'on' : 'off') +
       (b.available() ? '' : C.red('  (no key yet — will fall back to google)')));
 
-    // 5. Live verification
+    // 6. Live verification
     process.stdout.write(C.dim('verifying… '));
     try {
       const { displayContent } = await buildDisplayContent('Setup verification: translation works.\n', {
@@ -89,7 +101,10 @@ async function runSetup(opts) {
       console.log(C.red('verification failed: ' + e.message));
     }
 
-    console.log(C.dim('\nNext: restart Claude Code (new session). Toggle with `!cctrans off` / `!cctrans on`; input translation: `cctrans input on`.'));
+    console.log(C.dim('\nNext: restart Claude Code (new session). Toggle with `!cctrans off` / `!cctrans on`. ' +
+      (inputEn
+        ? 'Input translation (beta) is ON — disable: `cctrans input off`.'
+        : 'Input translation (beta): `cctrans input on`.')));
     return true;
   } finally {
     if (rl) rl.close();
