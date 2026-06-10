@@ -30,6 +30,18 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   rows (all modes), and the open section's buffered lines (section/message).
   Section mode commits state BEFORE translating — a crash/timeout drops a block's translation,
   never replays it at a wrong position. An index gap (a delta crashed unsaved) drops the buffer.
+- `hook/ask-user-question.js` — PreToolUse + PostToolUse hook (matcher AskUserQuestion) that
+  translates the interactive question dialog. The dialog renders from TOOL INPUT (MessageDisplay
+  never sees it), so PreToolUse rewrites question/labels/descriptions via `updatedInput` (NO
+  permissionDecision — that auto-runs the tool headless with empty answers) and stashes a restore
+  map by `tool_use_id` in `~/.cc-translate/dlgmap/`; PostToolUse restores the selected answer to
+  ENGLISH via `updatedToolOutput` (the model reads the option LABEL + question as its answer).
+  Append = bilingual `EN\n↳ ZH` labels (EN-first survives even if restore is skipped); replace =
+  pure-target labels (relies on restore). Restore needs CC >= 2.1.121 (updatedToolOutput for
+  built-in tools); doctor warns below it. Verified live on CC 2.1.172 (both modes, answer reads EN).
+- `src/dialog.js` — pure translateQuestions (tool_input → {updatedInput, restore map}, one batched
+  translateLines call) + restoreAnswer (tool_response answers keys/values + nested echo → English;
+  free-text + multi-select handled). Shared sha1 cache; no backend changes.
 - `hook/user-prompt-submit.js` — input translation hook (beta): non-English prompt → English additionalContext + "respond in English" instruction. Triggers on an ABSOLUTE non-Latin char count (`inputMinChars`, default 4; `cctrans input threshold <n>`) — never a ratio (paths/identifiers dilute ratios below any threshold; measured 0.13–0.16 on typical code-mixed prompts).
 - `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output.
   Block markdown is split off before translation and re-applied on the translated line
@@ -122,8 +134,9 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   registry only) — the npm link lives in the repo About homepage + README badges.
 
 ## Testing
-- `npm test` — 8 offline deterministic suites (fence, markdown, section, latin, message,
-  project, stats, table): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1 cache, so NO network.
+- `npm test` — 10 offline deterministic suites (fence, markdown, section, latin, message,
+  project, stats, table, replace, dialog): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1
+  cache, so NO network.
   CI runs them on push/PR (node 18/20/22/24) and before npm publish.
 - `node bin/cctrans.js test "<text>"` — engine only.
 - Live TUI: register the hook in a throwaway dir's `.claude/settings.json`, drive

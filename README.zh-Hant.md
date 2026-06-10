@@ -30,6 +30,7 @@
 - 🪞 **行內雙語顯示** —— 譯文隨回覆串流出現在每行英文下方,就在對話裡
 - 🧩 **三種排版** —— 逐行對照、按區塊成組(`cctrans mode section`),或整則回覆成組(`cctrans mode message`)
 - 🔄 **附加或替換** —— 在英文下方顯示譯文,或用 `cctrans display replace` 在原位只顯示譯文
+- ❓ **問題對話翻譯** —— Claude Code 的互動式提問對話也會以你的語言顯示,而模型讀到的仍是你的英文答案
 - 🧾 **非破壞性** —— 轉錄與模型上下文保持純英文;skills、文件、程式碼不受影響
 - 🆓 **主對話零 token** —— 翻譯走獨立低成本後端(也有免費選項),完全在 Claude Code 工作階段之外
 - ⌨️ **輸入翻譯(beta)** —— 用母語打字,模型按英文工作、按英文回覆(`cctrans input on`)
@@ -107,6 +108,7 @@ Claude 串流輸出英文
 | `cctrans lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | 排版:逐行、按區塊,或整則回覆 |
 | `cctrans display [append\|replace]` | 在英文下方顯示譯文,或在原位替換它(line 模式) |
+| `cctrans dialog [on\|off]` | 翻譯 Claude Code 的問題對話(預設開啟) |
 | `cctrans backend <id>` | 切換翻譯引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
 | `cctrans doctor` | 診斷:鉤子、Claude Code 版本、後端、金鑰、最近一次鉤子錯誤 |
@@ -149,6 +151,26 @@ cctrans display replace   # 只顯示譯文 · cctrans display append —— 切
 ```
 
 替換在 **line 模式**下生效(section/message 在設計上先把英文串流輸出,因此沒有可替換的對象)。無論哪種方式,轉錄和模型上下文都保持 100% 英文;無法翻譯的行會保留原文,所以絕不會有內容憑空消失。
+
+## ❓ 問題對話
+
+當 Claude Code 讓你從選項中挑選時(互動式問題對話),問題、選項標籤及其說明也會以你的語言顯示 —— 而你選中的答案送達模型時仍是**英文**,因此它的推理保持純英文:
+
+```
+ ☐ 颜色偏好
+Which color do you prefer?
+↳ 您更喜欢哪种颜色?
+❯ 1. Red
+     ↳ 红色
+     A bold, vibrant color
+     ↳ 大胆、鲜艳的颜色
+   2. Blue
+     ↳ 蓝色
+```
+
+這借助 Claude Code 的 `PreToolUse`/`PostToolUse` 鉤子實現(問題對話由工具輸入渲染,訊息覆蓋層構不到那裡)。它遵循你的 `display` 設定 —— append 模式下雙語,replace 模式下只顯示你的語言。預設開啟;用 `cctrans dialog off` 關閉。如果對話來不及翻譯,就原樣以英文顯示。
+
+> **升級後?** 更新後執行一次 `cctrans install`,以註冊新的對話鉤子。答案還原(讓模型讀到的答案保持英文)需要 Claude Code ≥ 2.1.121 —— `cctrans doctor` 會對更舊的版本發出警告。
 
 ## 🌐 翻譯後端
 

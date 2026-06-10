@@ -11,6 +11,15 @@ Release notes are also published on
 
 ### Added
 
+- **Translated question dialogs.** Claude Code's interactive question dialog
+  (AskUserQuestion) is now shown in your language — the question, option labels,
+  and descriptions — while the model still reads English (a PreToolUse hook
+  rewrites the dialog, a PostToolUse hook restores your selected answer to
+  English). Append mode shows it bilingually, replace mode shows only your
+  language. `cctrans dialog on|off` (on by default). **Run `cctrans install`
+  after upgrading to register the new dialog hooks.** The answer-restore needs
+  Claude Code >= 2.1.121; `cctrans doctor` warns on older versions.
+
 - **Replace display mode** (`cctrans display replace`, default `append`): show only
   the translation in place of the English, instead of under it. Takes effect in
   line mode (section/message stream the English first by design). The transcript

@@ -30,6 +30,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 - 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
 - 🧩 **Three layouts** — per-line interleave, per-block (`cctrans mode section`), or whole-reply (`cctrans mode message`)
 - 🔄 **Append or replace** — show the translation under the English, or `cctrans display replace` to show only the translation in its place
+- ❓ **Translated question dialogs** — Claude Code's interactive question prompts are shown in your language too, while the model still reads your English answer
 - 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
 - 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
 - ⌨️ **Input translation (beta)** — type prompts in your language; the model works — and replies — in English (`cctrans input on`)
@@ -107,6 +108,7 @@ Claude streams English
 | `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | layout: per line, per block, or whole reply |
 | `cctrans display [append\|replace]` | show the translation under the English, or in place of it (line mode) |
+| `cctrans dialog [on\|off]` | translate Claude Code's question dialogs (on by default) |
 | `cctrans backend <id>` | switch translation engine |
 | `cctrans backends` | list engines and their availability |
 | `cctrans doctor` | diagnose: hooks, Claude Code version, backends, keys, last hook error |
@@ -149,6 +151,26 @@ cctrans display replace   # only the translation · cctrans display append — b
 ```
 
 Replace takes effect in **line mode** (section/message stream the English first by design, so there is nothing to replace). The transcript and the model's context stay 100% English either way; a line that can't be translated keeps its original text, so nothing ever vanishes.
+
+## ❓ Question dialogs
+
+When Claude Code asks you to pick from options (the interactive question dialog), the question, the option labels, and their descriptions are shown in your language too — and your selected answer still reaches the model in **English**, so its reasoning stays English-only:
+
+```
+ ☐ 颜色偏好
+Which color do you prefer?
+↳ 您更喜欢哪种颜色？
+❯ 1. Red
+     ↳ 红色
+     A bold, vibrant color
+     ↳ 大胆、鲜艳的颜色
+   2. Blue
+     ↳ 蓝色
+```
+
+This rides on Claude Code's `PreToolUse`/`PostToolUse` hooks (a question dialog is rendered from tool input, which the message overlay can't reach). It follows your `display` setting — bilingual in append mode, your language only in replace mode. On by default; turn it off with `cctrans dialog off`. If a dialog can't be translated in time it shows in English, unchanged.
+
+> **Upgrading?** Run `cctrans install` once after updating to register the new dialog hooks. The answer-restore (keeping the model's answer English) needs Claude Code ≥ 2.1.121 — `cctrans doctor` warns on older versions.
 
 ## 🌐 Translation backends
 

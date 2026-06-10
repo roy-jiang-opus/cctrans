@@ -34,6 +34,8 @@ const DISPLAY_DESC = {
 };
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
 const INPUT_HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'user-prompt-submit.js');
+const DIALOG_HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'ask-user-question.js');
+const MIN_CC_DIALOG = [2, 1, 121]; // updatedToolOutput for built-in tools (answer restore)
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
 const keys = require('../src/keys');
 
@@ -102,6 +104,12 @@ function inputHookInstalled(s) {
   const groups = (s.hooks && s.hooks.UserPromptSubmit) || [];
   return JSON.stringify(groups).includes('user-prompt-submit.js');
 }
+function dialogHookInstalled(s) {
+  s = s || readSettings();
+  const pre = JSON.stringify((s.hooks && s.hooks.PreToolUse) || []).includes('ask-user-question.js');
+  const post = JSON.stringify((s.hooks && s.hooks.PostToolUse) || []).includes('ask-user-question.js');
+  return pre && post;
+}
 
 function install() {
   const s = readSettings();
@@ -118,9 +126,20 @@ function install() {
     s.hooks.UserPromptSubmit.push({ hooks: [{ type: 'command', command: 'node ' + INPUT_HOOK_PATH }] });
     changed = true;
   }
+  if (!dialogHookInstalled(s)) {
+    // PreToolUse rewrites the dialog; PostToolUse restores the answer. Matched
+    // on AskUserQuestion; a short timeout since PreToolUse blocks the dialog.
+    for (const event of ['PreToolUse', 'PostToolUse']) {
+      s.hooks[event] = s.hooks[event] || [];
+      if (!JSON.stringify(s.hooks[event]).includes('ask-user-question.js')) {
+        s.hooks[event].push({ matcher: 'AskUserQuestion', hooks: [{ type: 'command', command: 'node ' + DIALOG_HOOK_PATH, timeout: 10 }] });
+      }
+    }
+    changed = true;
+  }
   if (changed) {
     writeSettings(s);
-    console.log(C.green('✓') + ' registered MessageDisplay + UserPromptSubmit hooks in ' + SETTINGS);
+    console.log(C.green('✓') + ' registered MessageDisplay + UserPromptSubmit + AskUserQuestion hooks in ' + SETTINGS);
   } else {
     console.log(C.green('✓') + ' hooks already registered in ' + SETTINGS);
   }
@@ -141,6 +160,8 @@ function install() {
     console.log(C.red('!') + ' Claude Code CLI not found on PATH — the hooks only run inside Claude Code.');
   } else if (ccv.parts && !ccAtLeast(ccv.parts, MIN_CC)) {
     console.log(C.red('!') + ' Claude Code ' + ccv.raw + ' is too old: the MessageDisplay hook needs >= ' + MIN_CC.join('.') + '. Update Claude Code first.');
+  } else if (ccv.parts && !ccAtLeast(ccv.parts, MIN_CC_DIALOG)) {
+    console.log(C.dim('  (Claude Code ' + ccv.raw + ': question-dialog answer-restore needs >= ' + MIN_CC_DIALOG.join('.') + '; consider `cctrans dialog off` or upgrading)'));
   }
   console.log('');
   console.log('Next:');
@@ -152,7 +173,7 @@ function install() {
 function uninstall() {
   const s = readSettings();
   if (s.hooks) {
-    for (const [event, file] of [['MessageDisplay', 'message-display.js'], ['UserPromptSubmit', 'user-prompt-submit.js']]) {
+    for (const [event, file] of [['MessageDisplay', 'message-display.js'], ['UserPromptSubmit', 'user-prompt-submit.js'], ['PreToolUse', 'ask-user-question.js'], ['PostToolUse', 'ask-user-question.js']]) {
       if (Array.isArray(s.hooks[event])) {
         s.hooks[event] = s.hooks[event].filter((g) => !JSON.stringify(g).includes(file));
         if (s.hooks[event].length === 0) delete s.hooks[event];
@@ -182,6 +203,8 @@ function status() {
   console.log('  mode    : ' + st.mode + C.dim('  (' + (MODE_DESC[st.mode] || 'unknown mode') + ')'));
   console.log('  display : ' + st.display + C.dim('  (' + (DISPLAY_DESC[st.display] || 'unknown') +
     (st.display === 'replace' && st.mode !== 'line' ? C.red('; no effect in ' + st.mode + ' mode') : '') + ')'));
+  console.log('  dialog  : ' + (st.dialog ? C.green('ON') : 'off') + C.dim('  (translate AskUserQuestion dialogs; toggle: cctrans dialog on|off)') +
+    (st.dialog && !dialogHookInstalled() ? C.red('  (hooks not installed — run: cctrans install)') : ''));
   console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (beta; prompt -> English; toggle: cctrans input on|off; triggers at ' + st.inputMinChars + '+ non-Latin chars)'));
   console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: cctrans key)'));
   console.log('  state   : ' + STATE_FILE);
@@ -235,11 +258,16 @@ async function doctor() {
   if (!ccv) bad('Claude Code CLI not found on PATH', 'install Claude Code, or check PATH in the shell that launches it');
   else if (ccv.parts && !ccAtLeast(ccv.parts, MIN_CC)) bad('Claude Code ' + ccv.raw, 'MessageDisplay needs >= ' + MIN_CC.join('.') + ' — update Claude Code');
   else ok('Claude Code ' + ccv.raw);
+  if (ccv && ccv.parts && ccAtLeast(ccv.parts, MIN_CC) && st.dialog && !ccAtLeast(ccv.parts, MIN_CC_DIALOG)) {
+    warn('dialog answer-restore needs Claude Code >= ' + MIN_CC_DIALOG.join('.'), 'translated answers may reach the model — `cctrans dialog off` or upgrade');
+  }
 
   const settings = readSettings();
-  for (const [event, file, currentPath, required] of [
-    ['MessageDisplay', 'message-display.js', HOOK_PATH, true],
-    ['UserPromptSubmit', 'user-prompt-submit.js', INPUT_HOOK_PATH, false],
+  for (const [event, file, currentPath, required, need] of [
+    ['MessageDisplay', 'message-display.js', HOOK_PATH, true, null],
+    ['UserPromptSubmit', 'user-prompt-submit.js', INPUT_HOOK_PATH, false, st.inputEn ? 'input translation needs it' : null],
+    ['PreToolUse', 'ask-user-question.js', DIALOG_HOOK_PATH, false, st.dialog ? 'dialog translation needs it' : null],
+    ['PostToolUse', 'ask-user-question.js', DIALOG_HOOK_PATH, false, st.dialog ? 'dialog translation needs it' : null],
   ]) {
     // Walk the real hook group objects (never regex the JSON blob: quoted
     // paths with spaces would falsely read as "not registered").
@@ -251,7 +279,8 @@ async function doctor() {
     }
     if (!commands.length) {
       if (required) bad(event + ' hook not registered', 'run: cctrans install');
-      else warn(event + ' hook not registered', 'input translation needs it — run: cctrans install');
+      else if (need) warn(event + ' hook not registered', need + ' — run: cctrans install');
+      // feature off and not registered -> nothing to report
       continue;
     }
     // Best-effort path extraction: quoted first, then a bare token. If the
@@ -447,6 +476,7 @@ ${C.bold('Control')}
   cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi, es, pt, fr, de)
   cctrans mode [line|section|message]  layout: per line / per block / whole reply
   cctrans display [append|replace]     show ZH under the English, or in place of it (line mode)
+  cctrans dialog [on|off]              translate Claude Code's question dialogs (on by default)
   cctrans backend <id>           choose translation engine
   cctrans backends               list engines + availability
 
@@ -520,6 +550,17 @@ async function main() {
       console.log(C.green('✓') + ' display = ' + d + C.dim('  (' + DISPLAY_DESC[d] + ')') +
         (d === 'replace' && n.mode !== 'line' ? C.red('  (note: replace only takes effect in line mode; current mode is ' + n.mode + ')') : ''));
       noteProjectOverride('display', d);
+      break;
+    }
+    case 'dialog': {
+      const sub = rest[0];
+      if (sub === 'on' || sub === 'off') setState({ dialog: sub === 'on' });
+      else if (sub === 'toggle') setState({ dialog: !getState().dialog });
+      else if (sub) { console.error('usage: cctrans dialog [on|off]'); process.exit(1); }
+      const st = getState();
+      console.log('dialog translation: ' + (st.dialog ? C.green('ON') : C.red('OFF')) +
+        C.dim('  (AskUserQuestion dialogs shown in your language; model still reads English)') +
+        (st.dialog && !dialogHookInstalled() ? C.red('  (hooks not installed — run: cctrans install)') : ''));
       break;
     }
     case 'lang': {

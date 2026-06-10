@@ -2,6 +2,9 @@
 
 ## Shipped
 
+### ✅ Question-dialog translation (AskUserQuestion)
+Claude Code's interactive question dialog renders from the tool's INPUT, so the MessageDisplay overlay never sees it. A `PreToolUse` hook (matcher `AskUserQuestion`) rewrites the question, option labels, and descriptions into the target language via `updatedInput` (NO `permissionDecision` — that would auto-run the tool headless), and a `PostToolUse` hook restores the selected answer back to ENGLISH via `updatedToolOutput`, so the user reads the dialog in their language while the model reads clean English. Append mode shows bilingual `EN\n↳ 译` labels (English-first survives even without the restore); replace mode shows pure target. The answer-restore needs Claude Code ≥ 2.1.121 (`updatedToolOutput` for built-in tools); `cctrans doctor` warns below it. `cctrans dialog on|off` (default on). Verified live on CC 2.1.172 (both modes; the model reads the English label).
+
 ### ✅ Section display mode — grouped translation per block
 `cctrans mode section` (default stays `line`): English streams untouched, and a block's translation is spliced in as one grouped `↳` block when the block completes (blank line / code fence / already-target line / end of message) — much quieter for list-heavy replies. Design notes: section boundaries are properties of the **text**, never of delta chunking (deltas batch arbitrarily — verified live), which makes repaint replay byte-identical; the open block buffers in `~/.cc-translate/msgstate` (atomic writes, removed on message end, 24h GC); state is committed **before** translation, so a crash/timeout can only drop a block's translation, never misplace it. Headings close their own section (a displaced `## ↳ 译` would render as a real heading). Translation stays per-line, so both modes share the sha1 cache and the backends are untouched. The boundary machinery trivially supports a future `message` granularity (flush at final only).
 

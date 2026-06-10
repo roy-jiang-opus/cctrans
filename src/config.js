@@ -15,6 +15,7 @@ const BASE = process.env.CCTRANS_HOME || path.join(HOME, '.cc-translate');
 const STATE_FILE = path.join(BASE, 'state.json');
 const CACHE_DIR = path.join(BASE, 'cache');
 const MSGSTATE_DIR = path.join(BASE, 'msgstate');
+const DLGMAP_DIR = path.join(BASE, 'dlgmap'); // question-dialog restore maps, keyed by tool_use_id
 
 // Display layouts. Validate against this list everywhere (CLI, setup, hook).
 const MODES = ['line', 'section', 'message'];
@@ -30,7 +31,7 @@ const DISPLAYS = ['append', 'replace'];
 // azureEndpoint: a repo-controlled endpoint that receives the Azure key would
 // be an exfiltration vector, so endpoint config stays global-only.
 const PROJECT_FILE = '.cc-translate.json';
-const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'display', 'inputEn', 'inputMinChars'];
+const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'display', 'dialog', 'inputEn', 'inputMinChars'];
 
 // Walk up from cwd looking for a project file (stops at the filesystem root).
 function findProjectFile(cwd) {
@@ -45,17 +46,19 @@ function findProjectFile(cwd) {
   return null;
 }
 
-// Remove per-message state files older than maxAgeMs (0 = all). Sessions
-// killed mid-message leave their file behind; swept here and on index-0 saves.
-function sweepMsgState(maxAgeMs) {
+// Remove files in dir older than maxAgeMs (0 = all). Used for per-message
+// state and dialog maps left behind by sessions killed mid-message/mid-dialog.
+function sweepDir(dir, maxAgeMs) {
   try {
     const cutoff = Date.now() - (maxAgeMs || 0);
-    for (const f of fs.readdirSync(MSGSTATE_DIR)) {
-      const p = path.join(MSGSTATE_DIR, f);
+    for (const f of fs.readdirSync(dir)) {
+      const p = path.join(dir, f);
       try { if (fs.statSync(p).mtimeMs <= cutoff) fs.unlinkSync(p); } catch (e) {}
     }
   } catch (e) {}
 }
+function sweepMsgState(maxAgeMs) { sweepDir(MSGSTATE_DIR, maxAgeMs); }
+function sweepDlgMap(maxAgeMs) { sweepDir(DLGMAP_DIR, maxAgeMs); }
 
 function ensureDirs() {
   try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch (e) {}
@@ -73,6 +76,7 @@ function defaults() {
     marker: '↳ ', // prefix on each translated line
     mode: 'line', // display layout, one of MODES: line / section / message
     display: 'append', // 'append' (ZH under EN) or 'replace' (ZH in place of EN; line mode only)
+    dialog: true, // translate AskUserQuestion dialogs (PreToolUse rewrite + PostToolUse restore)
     inputEn: false, // input translation (beta, prompt -> English) off until enabled
     inputMinChars: 4, // non-Latin chars in a prompt that trigger input translation
     cacheMaxMB: 200, // translation-cache size cap, enforced by the periodic GC
@@ -119,6 +123,7 @@ function setState(patch) {
     marker: next.marker,
     mode: next.mode,
     display: next.display,
+    dialog: next.dialog,
     inputEn: next.inputEn,
     inputMinChars: next.inputMinChars,
     cacheMaxMB: next.cacheMaxMB,
@@ -129,4 +134,4 @@ function setState(patch) {
   return next;
 }
 
-module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, MODES, DISPLAYS, PROJECT_FILE, ensureDirs, getState, setState, defaults, sweepMsgState, findProjectFile };
+module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, DLGMAP_DIR, MODES, DISPLAYS, PROJECT_FILE, ensureDirs, getState, setState, defaults, sweepMsgState, sweepDlgMap, findProjectFile };
