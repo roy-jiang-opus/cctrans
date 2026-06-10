@@ -28,6 +28,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 ## ✨ Features
 
 - 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
+- 🧩 **Two layouts** — per-line interleave, or `cctrans mode section`: whole English block first, then its grouped translation
 - 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
 - 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
 - ⌨️ **Input translation (beta)** — type prompts in your language; the model works — and replies — in English (`cctrans input on`)
@@ -99,15 +100,38 @@ Claude streams English
 | `cctrans on` / `cctrans off` / `cctrans toggle` | turn translation on / off / toggle |
 | `cctrans status` | show state (toggle, hook, backend, language) |
 | `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
+| `cctrans mode [line\|section]` | layout: translation under each line, or grouped per block |
 | `cctrans backend <id>` | switch translation engine |
 | `cctrans backends` | list engines and their availability |
-| `cctrans setup` | interactive wizard: language, backend, API keys |
+| `cctrans setup` | interactive wizard: language, display mode, backend, API keys |
 | `cctrans key [id] [value]` | manage API keys in `~/.cc-translate/keys.json` |
 | `cctrans input on` / `cctrans input off` | **(beta)** translate non-English input to English (sent as context) |
 | `cctrans input threshold <n>` | non-Latin characters that trigger input translation (default 4) |
 | `cctrans last [N]` | translate the latest (or N-back) reply to the terminal |
 | `cctrans test <text>` | translate ad-hoc text to verify the engine |
 | `cctrans install` / `cctrans uninstall` | register / remove the hooks |
+
+## 🧩 Display modes
+
+`line` (default) interleaves: a translated line under each English line, streaming with the reply. `section` keeps English exactly as Claude streams it and splices in **one grouped translation when a block completes** — much quieter for list-heavy replies:
+
+```
+Use these flags:
+↳ 使用以下参数：
+
+- Enable the cache
+- Set a small timeout
+- Prefer the batch API
+  ↳ 启用缓存
+  ↳ 设置较短的超时
+  ↳ 优先使用批量 API
+```
+
+```bash
+cctrans mode section   # switch back anytime: cctrans mode line
+```
+
+> In section mode a block's translation appears **when the block completes**, not while it streams — with a slow backend (e.g. `claude-code`, 3–6 s/call) that pause is noticeable, so API backends feel best here. If a block's translation fails, the English is unaffected and that block simply stays untranslated.
 
 ## 🌐 Translation backends
 
@@ -151,7 +175,8 @@ Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chine
 
 - The hook fires **per chunk during streaming**; each chunk is translated and replaced in place — translations appear progressively alongside the English.
 - The hook has a **10-second** timeout; this tool guards at 9s internally. Any error / timeout / oversized chunk (>9,000 chars) **falls back safely to the original English** — it never stalls the session.
-- Every translated line is **cached** by content hash (`~/.cc-translate/cache`); repaints and repeated text cost nothing.
+- Every translated line is **cached** by content hash (`~/.cc-translate/cache`); repaints and repeated text cost nothing. Both modes share the cache.
+- In section mode an in-flight block's text is buffered in `~/.cc-translate/msgstate` (same at-rest exposure as the cache); the file is removed when the message completes and stale ones are swept after 24h.
 - With `openai`, each chunk is roughly one API call (~$0.0001) and adds about 1s of latency vs. plain English; `google` is faster with slightly lower quality.
 
 ## 🔗 Stay in the loop

@@ -28,6 +28,7 @@
 ## ✨ 特性
 
 - 🪞 **行內雙語顯示** —— 譯文隨回覆串流出現在每行英文下方,就在對話裡
+- 🧩 **兩種排版** —— 逐行對照,或 `cctrans mode section`:整塊英文先出,再跟一段成組譯文
 - 🧾 **非破壞性** —— 轉錄與模型上下文保持純英文;skills、文件、程式碼不受影響
 - 🆓 **主對話零 token** —— 翻譯走獨立低成本後端(也有免費選項),完全在 Claude Code 工作階段之外
 - ⌨️ **輸入翻譯(beta)** —— 用母語打字,模型按英文工作、按英文回覆(`cctrans input on`)
@@ -99,15 +100,38 @@ Claude 串流輸出英文
 | `cctrans on` / `cctrans off` / `cctrans toggle` | 開 / 關 / 切換翻譯 |
 | `cctrans status` | 檢視狀態(開關、鉤子、後端、語言) |
 | `cctrans lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
+| `cctrans mode [line\|section]` | 排版:譯文跟在每行下方,或按區塊成組 |
 | `cctrans backend <id>` | 切換翻譯引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
-| `cctrans setup` | 互動式精靈:語言、後端、API key |
+| `cctrans setup` | 互動式精靈:語言、顯示模式、後端、API key |
 | `cctrans key [id] [value]` | 管理 `~/.cc-translate/keys.json` 中的 API key |
 | `cctrans input on` / `cctrans input off` | **(beta)** 把非英文輸入翻譯成英文(作為上下文傳給模型) |
 | `cctrans input threshold <n>` | 觸發輸入翻譯的非拉丁字元數(預設 4) |
 | `cctrans last [N]` | 把最近(或往前第 N 則)回覆翻譯到終端機 |
 | `cctrans test <文字>` | 翻譯一段文字,驗證引擎 |
 | `cctrans install` / `cctrans uninstall` | 註冊 / 移除鉤子 |
+
+## 🧩 顯示模式
+
+`line`(預設)逐行對照:每行英文下方一行譯文,隨回覆串流出現。`section` 讓英文完全按 Claude 的串流輸出原樣呈現,在**一個區塊完成時**插入一段成組譯文——對列表很多的回覆要安靜得多:
+
+```
+Use these flags:
+↳ 使用以下参数：
+
+- Enable the cache
+- Set a small timeout
+- Prefer the batch API
+  ↳ 启用缓存
+  ↳ 设置较短的超时
+  ↳ 优先使用批量 API
+```
+
+```bash
+cctrans mode section   # 隨時切回:cctrans mode line
+```
+
+> section 模式下,一個區塊的譯文在**該區塊完成時**才出現,而不是邊串流邊出——後端慢時(如 `claude-code`,3–6 秒/次)這個停頓會比較明顯,所以這裡 API 後端體驗最好。某個區塊翻譯失敗時,英文不受影響,該區塊只是保持未翻譯。
 
 ## 🌐 翻譯後端
 
@@ -151,7 +175,8 @@ cctrans lang zh-Hans  # 簡體中文(預設)
 
 - 鉤子在**串流輸出中**按片段觸發,每段單獨翻譯並就地替換——所以譯文會隨英文逐段出現。
 - 鉤子有 **10 秒**逾時;本工具內部 9 秒保底。任何錯誤/逾時/超長(>9000 字元)都會**安全回退成原始英文**,絕不卡住工作階段。
-- 每行譯文按內容雜湊**快取**(`~/.cc-translate/cache`),重繪與重複文字零成本。
+- 每行譯文按內容雜湊**快取**(`~/.cc-translate/cache`),重繪與重複文字零成本。兩種模式共享同一快取。
+- section 模式下,進行中區塊的文字會緩衝在 `~/.cc-translate/msgstate`(落盤暴露面與快取相同);訊息完成後該檔案即刪除,逾期殘留檔案 24 小時後清理。
 - 用 `openai` 時每段約一次 API 呼叫(~$0.0001),串流輸出會比純英文多約 1 秒/段的延遲;`google` 較快但品質略低。
 
 ## 🔗 關注專案

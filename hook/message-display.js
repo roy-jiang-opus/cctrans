@@ -6,9 +6,15 @@
 //   delta = the newly completed lines of the streaming assistant message.
 //           Deltas are non-overlapping; a code fence (```) can span deltas.
 // stdout (JSON, exit 0): { hookSpecificOutput: { hookEventName: "MessageDisplay",
-//                          displayContent: "<EN line>\n↳ <ZH line> ..." } }
+//                          displayContent: "..." } }
 //   displayContent REPLACES the delta on screen. Display-only: the transcript
 //   and the model's context keep the original English.
+//
+// Two layouts (state.json "mode"):
+//   line     — every prose line gets its "↳ 译" immediately (buildDisplayContent)
+//   section  — English passes through untouched; prose lines buffer in msgstate
+//              and a grouped ZH block is spliced in when the section closes
+//              (planSections + renderSections)
 //
 // Safety contract: on disabled / empty / error / timeout, emit NOTHING and
 // exit 0 so Claude Code renders the original English delta unchanged. This hook
@@ -16,27 +22,49 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getState, BASE } = require('../src/config');
-const { buildDisplayContent } = require('../src/interleave');
+const { getState, MSGSTATE_DIR, sweepMsgState } = require('../src/config');
+const { buildDisplayContent, planSections, renderSections } = require('../src/interleave');
 
 function showOriginal() { process.exit(0); } // no stdout => CC keeps the original delta
 
-// Per-message code-fence state, so "inside a ``` block?" carries across the
-// deltas of one message. Reset at index 0 (also covers full repaints, which
-// re-send the message from index 0); removed when the message completes.
-const MSGDIR = path.join(BASE, 'msgstate');
-function fenceFile(id) { return path.join(MSGDIR, String(id).replace(/[^\w.-]/g, '_') + '.json'); }
-function loadFence(id, index) {
-  if (!id || index === 0) return false;
-  try { return !!JSON.parse(fs.readFileSync(fenceFile(id), 'utf8')).inFence; } catch (e) { return false; }
+// Per-message state, so "inside a ``` block?" and the open section's buffered
+// lines carry across the deltas of one message (fresh process per delta).
+// Reset at index 0 (also covers full repaints, which re-send the message from
+// index 0); removed when the message completes. Schema {v, mode, index,
+// inFence, buf}; a version/mode mismatch or unparseable file reads as fresh.
+const STATE_V = 2;
+function stateFile(id) { return path.join(MSGSTATE_DIR, String(id).replace(/[^\w.-]/g, '_') + '.json'); }
+function loadMsgState(id, index, mode) {
+  const fresh = { inFence: false, buf: [] };
+  if (!id || index === 0) return fresh;
+  try {
+    const st = JSON.parse(fs.readFileSync(stateFile(id), 'utf8'));
+    if (st.v !== STATE_V || st.mode !== mode) return fresh;
+    // Index gap = an earlier delta crashed before saving. Drop the buffer so
+    // two sections can never be translated as one block at a later boundary;
+    // keep the fence flag best-effort (same exposure line mode has today).
+    if (st.index !== index - 1) return { inFence: !!st.inFence, buf: [] };
+    return { inFence: !!st.inFence, buf: Array.isArray(st.buf) ? st.buf : [] };
+  } catch (e) { return fresh; }
 }
-function saveFence(id, index, inFence, final) {
+function saveMsgState(id, index, mode, inFence, buf, final) {
   if (!id) return;
   try {
-    if (final) { try { fs.unlinkSync(fenceFile(id)); } catch (e) {} return; }
-    fs.mkdirSync(MSGDIR, { recursive: true });
-    fs.writeFileSync(fenceFile(id), JSON.stringify({ index, inFence }));
+    if (final) { try { fs.unlinkSync(stateFile(id)); } catch (e) {} return; }
+    fs.mkdirSync(MSGSTATE_DIR, { recursive: true });
+    const f = stateFile(id);
+    const tmp = f + '.' + process.pid + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify({ v: STATE_V, mode, index, inFence, buf }));
+    fs.renameSync(tmp, f); // atomic: buf files are big enough for torn writes to matter
+    if (index === 0) sweepMsgState(24 * 60 * 60 * 1000); // GC files leaked by killed sessions
   } catch (e) {}
+}
+
+function emit(displayContent) {
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: { hookEventName: 'MessageDisplay', displayContent: displayContent },
+  }));
+  process.exit(0);
 }
 
 let data = '';
@@ -49,7 +77,6 @@ process.stdin.on('end', async () => {
   try { inp = JSON.parse(data); } catch (e) { return showOriginal(); }
 
   const delta = typeof inp.delta === 'string' ? inp.delta : '';
-  if (!delta) return showOriginal();
 
   // Recursion guard: the claude-code backend spawns `claude -p` with
   // CCTRANS_DISABLE=1 so a child Claude process can never re-enter this hook.
@@ -62,22 +89,48 @@ process.stdin.on('end', async () => {
   const id = inp.message_id;
   const index = typeof inp.index === 'number' ? inp.index : 0;
   const final = inp.final === true;
-  const inFence0 = loadFence(id, index);
+
+  if (st.mode === 'section') {
+    const ms = loadMsgState(id, index, 'section');
+    // An empty delta still flushes when it is the final one and lines are buffered.
+    if (!delta && !(final && ms.buf.length)) return showOriginal();
+    const guard = setTimeout(showOriginal, 9000);
+    try {
+      const planned = planSections(delta, { inFence: ms.inFence, buf: ms.buf, target: st.target, final: final });
+      // Commit state BEFORE translating (flushed sections already pruned from
+      // buf): a crash/timeout past this point can only drop a section's
+      // translation, never replay it at a wrong position.
+      saveMsgState(id, index, 'section', planned.inFence, planned.buf, final);
+      if (!planned.flushes.length) { clearTimeout(guard); return showOriginal(); }
+      const displayContent = await renderSections(planned, {
+        target: st.target, backend: st.backend, model: st.model, marker: st.marker,
+        timeoutMs: 5500, // smaller than line mode's 8000 so the google fallback keeps ~3s under the 9s guard
+      });
+      clearTimeout(guard);
+      if (displayContent == null) return showOriginal();
+      emit(displayContent);
+    } catch (e) {
+      clearTimeout(guard);
+      return showOriginal();
+    }
+    return;
+  }
+
+  // line mode
+  if (!delta) return showOriginal();
+  const ms = loadMsgState(id, index, 'line');
 
   // Guard below Claude Code's 10s MessageDisplay timeout so we always exit clean.
   const guard = setTimeout(showOriginal, 9000);
   try {
     const { displayContent, inFence } = await buildDisplayContent(delta, {
       target: st.target, backend: st.backend, model: st.model,
-      marker: st.marker, timeoutMs: 8000, inFence: inFence0,
+      marker: st.marker, timeoutMs: 8000, inFence: ms.inFence,
     });
     clearTimeout(guard);
-    saveFence(id, index, inFence, final); // persist even when nothing was translated
+    saveMsgState(id, index, 'line', inFence, [], final); // persist even when nothing was translated
     if (displayContent == null) return showOriginal();
-    process.stdout.write(JSON.stringify({
-      hookSpecificOutput: { hookEventName: 'MessageDisplay', displayContent: displayContent },
-    }));
-    process.exit(0);
+    emit(displayContent);
   } catch (e) {
     clearTimeout(guard);
     return showOriginal();

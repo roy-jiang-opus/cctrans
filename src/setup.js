@@ -1,11 +1,12 @@
 'use strict';
-// Interactive setup wizard: language -> backend -> API-key entry -> input
-// translation (beta) -> live verification -> save. Re-runnable via `cctrans
-// setup`; non-interactive with flags (--lang, --backend, --key, --input,
-// --yes). Keys go to keys.json only — the shell environment is never read.
+// Interactive setup wizard: language -> display mode -> backend -> API-key
+// entry -> input translation (beta) -> live verification -> save. Re-runnable
+// via `cctrans setup`; non-interactive with flags (--lang, --mode, --backend,
+// --key, --input, --yes). Keys go to keys.json only — the shell environment is
+// never read.
 
 const readline = require('node:readline/promises');
-const { getState, setState } = require('./config');
+const { getState, setState, MODES } = require('./config');
 const { listLangs, getLang, normalizeLang } = require('./langs');
 const { listBackends, getBackend } = require('./backends');
 const keys = require('./keys');
@@ -38,7 +39,7 @@ async function runSetup(opts) {
     let lang = opts.lang;
     if (!lang) {
       const codes = listLangs();
-      console.log('\n' + C.bold('Target language') + ' — translations appear under each English line:');
+      console.log('\n' + C.bold('Target language') + ' — replies show English + your language inline:');
       codes.forEach((c, i) => console.log('  ' + (i + 1) + '. ' + c.padEnd(8) + C.dim(getLang(c).name)));
       const cur = getState().target;
       const a = await ask('Pick a number or code', cur);
@@ -47,7 +48,18 @@ async function runSetup(opts) {
     if (!getLang(lang)) { console.error(C.red('unsupported language: ' + lang)); return false; }
     lang = normalizeLang(lang);
 
-    // 2. Backend
+    // 2. Display mode
+    let mode = opts.mode;
+    if (!mode) {
+      console.log('\n' + C.bold('Display mode') + ':');
+      console.log('  1. line     ' + C.dim('translation under each English line, as it streams'));
+      console.log('  2. section  ' + C.dim('English block first, then its translation — appears when the block completes'));
+      const a = await ask('Pick a number or name', getState().mode);
+      mode = a === '1' ? 'line' : a === '2' ? 'section' : a;
+    }
+    if (!MODES.includes(mode)) { console.error(C.red('unknown mode: ' + mode + ' (available: ' + MODES.join(', ') + ')')); return false; }
+
+    // 3. Backend
     let backend = opts.backend;
     if (!backend) {
       console.log('\n' + C.bold('Translation backend') + ':');
@@ -62,7 +74,7 @@ async function runSetup(opts) {
     const b = getBackend(backend);
     if (!b) { console.error(C.red('unknown backend: ' + backend)); return false; }
 
-    // 3. Key entry for the chosen backend, if missing (keys live ONLY in
+    // 4. Key entry for the chosen backend, if missing (keys live ONLY in
     //    keys.json — shell env vars are never read)
     if (!b.available() && keys.KEY_IDS.includes(b.id)) {
       const v = opts.key || (await ask('Paste your ' + b.id + ' API key (enter to skip)', ''));
@@ -73,7 +85,7 @@ async function runSetup(opts) {
       }
     }
 
-    // 4. Input translation (beta, opt-in): prompt -> English as context
+    // 5. Input translation (beta, opt-in): prompt -> English as context
     let inputEn = typeof opts.input === 'string' ? opts.input === 'on' : getState().inputEn;
     if (opts.input === undefined && rl) {
       console.log('\n' + C.bold('Input translation') + ' ' + C.dim('(beta)') +
@@ -84,13 +96,13 @@ async function runSetup(opts) {
       inputEn = /^y(es)?$/i.test(a);
     }
 
-    // 5. Save config
-    setState({ target: lang, backend, inputEn });
-    console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), backend=' + backend +
-      ', input=' + (inputEn ? 'on' : 'off') +
+    // 6. Save config
+    setState({ target: lang, mode, backend, inputEn });
+    console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), mode=' + mode +
+      ', backend=' + backend + ', input=' + (inputEn ? 'on' : 'off') +
       (b.available() ? '' : C.red('  (no key yet — will fall back to google)')));
 
-    // 6. Live verification
+    // 7. Live verification
     process.stdout.write(C.dim('verifying… '));
     try {
       const { displayContent } = await buildDisplayContent('Setup verification: translation works.\n', {

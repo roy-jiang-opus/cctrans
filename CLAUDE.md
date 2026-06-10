@@ -17,14 +17,31 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / >9000 chars → emit nothing → original English.
 
 ## Files
-- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/backend/backends/setup/key/input/install/uninstall/last/test
-- `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard
+- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/backend/backends/setup/key/input/install/uninstall/last/test
+- `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard.
+  Per-message state in `~/.cc-translate/msgstate/<message_id>.json` ({v, mode, index, inFence, buf},
+  atomic tmp+rename, reset at index 0 = new message OR full repaint, unlinked on final, 24h GC):
+  carries the code-fence flag (line mode) and the open section's buffered lines (section mode).
+  Section mode commits state BEFORE translating — a crash/timeout drops a block's translation,
+  never replays it at a wrong position. An index gap (a delta crashed unsaved) drops the buffer.
 - `hook/user-prompt-submit.js` — input translation hook (beta): non-English prompt → English additionalContext + "respond in English" instruction. Triggers on an ABSOLUTE non-Latin char count (`inputMinChars`, default 4; `cctrans input threshold <n>`) — never a ratio (paths/identifiers dilute ratios below any threshold; measured 0.13–0.16 on typical code-mixed prompts).
 - `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output.
   Block markdown is split off before translation and re-applied on the translated line
   (heading → `## ↳ 译`, quote → `> ↳ 译`, list → same-width indent to avoid a second
   bullet) — translating the raw line leaves a literal `##`/`-`/`>` after the ↳ marker.
   Rendering verified live on CC 2.1.170 (heading bold on both lines, quote bar kept).
+  Also the section-mode engine (`cctrans mode section`, default `line`): `planSections`
+  (pure sync segmentation — so the hook can persist state before any await) +
+  `renderSections` (translate + splice). A section = a maximal prose run; boundaries are
+  TEXT-anchored (real blank line / code / target line / heading / 6000-char soft cap
+  deferred past list items / final), never delta-anchored — delta chunking is arbitrary
+  (probe-verified: same reply, 3 deltas one run, 5 the next), and text-anchored splices
+  are what make repaint replay byte-identical. Headings close their own section (a
+  displaced `## ↳ 译` renders as a REAL heading below the block it titles — probe-verified);
+  in displaced grouped blocks heading/quote prefixes are demoted to plain `↳` (uniform
+  quote runs keep `> `). Translation stays per-LINE, so both modes share the sha1 cache
+  and backend prompts are untouched. The trailing `''` from split('\n') is the delta's
+  trailing-\n encoding, NOT a blank line (all non-final deltas end with \n; final never does).
 - `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
@@ -34,6 +51,14 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `src/transcript.js` — find + parse session JSONL (used by `cctrans last`)
 
 ## Constraints (verified, don't relitigate)
+- MessageDisplay delta semantics (probed live on 2.1.170, raw logs in /tmp/tt-secprobe-delta):
+  blank lines NEVER arrive standalone — always trailing their block in the same delta;
+  a multi-sentence paragraph is ONE logical line; `displayContent:""` fully SUPPRESSES a
+  delta (zero rows) — never use it: a killed hook would leave English hidden forever;
+  replacing a blank line consumes the paragraph gap unless the hook re-emits the blank;
+  markdown inside spliced content IS rendered (not literal); CC does NOT serialize delta
+  delivery behind a slow hook. Live probes must launch claude with CCTRANS_DISABLE=1 or
+  the globally-registered hook wins over the probe's.
 - `keybindings.json` cannot run shell commands or toggle hooks → there is no true
   in-TUI hotkey. Toggle is a flag (`cctrans on/off`), fastest via `!cctrans off` inside CC.
 - MessageDisplay timeout is 10s; output cap ~10k chars. Keep per-delta work fast.

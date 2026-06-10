@@ -13,8 +13,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { getState, setState, STATE_FILE } = require('../src/config');
-const { buildDisplayContent } = require('../src/interleave');
+const { getState, setState, STATE_FILE, MODES, sweepMsgState } = require('../src/config');
+const { buildDisplayContent, planSections, renderSections } = require('../src/interleave');
 const { findTranscript, extractReply } = require('../src/transcript');
 const { listBackends, getBackend } = require('../src/backends');
 const { getLang, listLangs, normalizeLang } = require('../src/langs');
@@ -117,6 +117,9 @@ function status() {
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: cctrans install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
   console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: cctrans lang)')));
+  console.log('  mode    : ' + st.mode + C.dim(st.mode === 'section'
+    ? '  (grouped per block; translation appears when the block completes)'
+    : '  (translation under each English line)'));
   console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (beta; prompt -> English; toggle: cctrans input on|off; triggers at ' + st.inputMinChars + '+ non-Latin chars)'));
   console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: cctrans key)'));
   console.log('  state   : ' + STATE_FILE);
@@ -150,17 +153,30 @@ function backends() {
 }
 
 function colorizeForTerminal(displayContent, marker) {
+  // Match the marker after optional structure prefixes too ("## ↳", "> ↳",
+  // list-indent "  ↳") so grouped section blocks color consistently.
+  const zhLine = new RegExp('^\\s*(?:#{1,6}\\s+|(?:>\\s*)+)?\\s*' + marker.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return displayContent
     .split('\n')
-    .map((l) => (l.startsWith(marker) ? C.cyan(l) : l))
+    .map((l) => (zhLine.test(l) ? C.cyan(l) : l))
     .join('\n');
 }
 
 async function renderText(text) {
   const st = getState();
-  const { displayContent } = await buildDisplayContent(text, {
-    target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000,
-  });
+  let displayContent;
+  if (st.mode === 'section') {
+    // The whole text is one final delta, so `cctrans test`/`last` exercise
+    // section mode end-to-end.
+    const planned = planSections(text, { inFence: false, buf: [], target: st.target, final: true });
+    displayContent = await renderSections(planned, {
+      target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000,
+    });
+  } else {
+    displayContent = (await buildDisplayContent(text, {
+      target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000,
+    })).displayContent;
+  }
   if (displayContent == null) { process.stdout.write(text + '\n'); return; }
   process.stdout.write(colorizeForTerminal(displayContent, st.marker) + '\n');
 }
@@ -183,13 +199,14 @@ ${C.bold('Control')}
   cctrans input threshold <n>    non-Latin chars that trigger input translation (default 4)
   cctrans status                 show current state
   cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi)
+  cctrans mode [line|section]    layout: translation under each line, or grouped per block
   cctrans backend <id>           choose translation engine
   cctrans backends               list engines + availability
 
 ${C.bold('Setup')}
   cctrans install                register hooks (+ link cctrans), then run setup
-  cctrans setup                  interactive wizard: language, backend, API keys
-                            (flags: --lang --backend --key --input --yes)
+  cctrans setup                  interactive wizard: language, display mode, backend, API keys
+                            (flags: --lang --mode --backend --key --input --yes)
   cctrans key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
   cctrans uninstall              remove the hooks
@@ -204,8 +221,8 @@ ${C.dim('Tip: toggle from inside Claude Code by typing  !cctrans off  /  !cctran
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   switch (cmd) {
-    case 'on': setState({ enabled: true }); console.log(C.green('✓ translation ON')); break;
-    case 'off': setState({ enabled: false }); console.log('✓ translation ' + C.red('OFF')); break;
+    case 'on': setState({ enabled: true }); sweepMsgState(24 * 60 * 60 * 1000); console.log(C.green('✓ translation ON')); break;
+    case 'off': setState({ enabled: false }); sweepMsgState(0); console.log('✓ translation ' + C.red('OFF')); break;
     case 'toggle': { const s = getState(); const n = setState({ enabled: !s.enabled }); console.log('✓ translation ' + (n.enabled ? C.green('ON') : C.red('OFF'))); break; }
     case 'backend': {
       const id = rest[0];
@@ -219,6 +236,20 @@ async function main() {
       break;
     }
     case 'backends': backends(); break;
+    case 'mode': {
+      const m = rest[0];
+      if (!m) {
+        const st = getState();
+        console.log('mode = ' + st.mode + C.dim('  (available: line — translation under each English line; section — grouped per block)'));
+        break;
+      }
+      if (!MODES.includes(m)) { console.error('usage: cctrans mode <' + MODES.join('|') + '>'); process.exit(1); }
+      setState({ mode: m });
+      console.log(C.green('✓') + ' mode = ' + m + C.dim(m === 'section'
+        ? '  (English streams as-is; each block\'s translation appears when the block completes)'
+        : '  (translation under each English line)'));
+      break;
+    }
     case 'lang': {
       const code = rest[0];
       if (!code) { const st = getState(); console.log('lang = ' + st.target + C.dim('  (available: ' + listLangs().join(', ') + '; aliases: zh-CN, zh-TW)')); break; }
@@ -241,6 +272,7 @@ async function main() {
       const flag = (name) => { const i = rest.indexOf(name); return i > -1 ? rest[i + 1] : undefined; };
       await require('../src/setup').runSetup({
         lang: flag('--lang'),
+        mode: flag('--mode'),
         backend: flag('--backend'),
         key: flag('--key'),
         input: flag('--input'),

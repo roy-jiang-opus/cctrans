@@ -28,6 +28,7 @@
 ## ✨ 特性
 
 - 🪞 **行内双语显示** —— 译文随回复流式出现在每行英文下方,就在对话里
+- 🧩 **两种排版** —— 逐行对照,或 `cctrans mode section`:整块英文先出,再跟一段成组译文
 - 🧾 **非破坏** —— 转录与模型上下文保持纯英文;skills、文档、代码不受影响
 - 🆓 **主对话零 token** —— 翻译走独立便宜后端(也有免费选项),完全在 Claude Code 会话之外
 - ⌨️ **输入翻译(beta)** —— 用母语打字,模型按英文工作、按英文回复(`cctrans input on`)
@@ -99,15 +100,38 @@ Claude 流式输出英文
 | `cctrans on` / `cctrans off` / `cctrans toggle` | 开 / 关 / 切换翻译 |
 | `cctrans status` | 查看状态(开关、钩子、后端、语言) |
 | `cctrans lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
+| `cctrans mode [line\|section]` | 排版:译文跟在每行下方,或按块成组 |
 | `cctrans backend <id>` | 切换翻译引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
-| `cctrans setup` | 交互式向导:语言、后端、API key |
+| `cctrans setup` | 交互式向导:语言、显示模式、后端、API key |
 | `cctrans key [id] [value]` | 管理 `~/.cc-translate/keys.json` 里的 API key |
 | `cctrans input on` / `cctrans input off` | **(beta)** 把非英文输入翻译成英文(作为上下文发给模型) |
 | `cctrans input threshold <n>` | 触发输入翻译的非拉丁字符数(默认 4) |
 | `cctrans last [N]` | 把最近(或往前第 N 条)回复翻译到终端 |
 | `cctrans test <文本>` | 翻译一段文本,验证引擎 |
 | `cctrans install` / `cctrans uninstall` | 注册 / 移除钩子 |
+
+## 🧩 显示模式
+
+`line`(默认)逐行对照:每行英文下面一行译文,随回复流式出现。`section` 让英文完全按 Claude 的流式输出原样呈现,在**一个块完成时**插入一段成组译文——对列表很多的回复要安静得多:
+
+```
+Use these flags:
+↳ 使用以下参数：
+
+- Enable the cache
+- Set a small timeout
+- Prefer the batch API
+  ↳ 启用缓存
+  ↳ 设置较短的超时
+  ↳ 优先使用批量 API
+```
+
+```bash
+cctrans mode section   # 随时切回:cctrans mode line
+```
+
+> section 模式下,一个块的译文在**该块完成时**才出现,而不是边流式边出——后端慢时(如 `claude-code`,3–6 秒/次)这个停顿会比较明显,所以这里 API 后端体验最好。某个块翻译失败时,英文不受影响,该块只是保持未翻译。
 
 ## 🌐 翻译后端
 
@@ -151,7 +175,8 @@ cctrans lang zh-Hans  # 简体中文(默认)
 
 - 钩子在**流式输出中**按片段触发,每段单独翻译并就地替换——所以译文会随英文逐段出现。
 - 钩子有 **10 秒**超时;本工具内部 9 秒兜底。任何错误/超时/超长(>9000 字符)都会**安全回退成原始英文**,绝不卡住会话。
-- 每行译文按内容哈希**缓存**(`~/.cc-translate/cache`),重绘和重复文本零成本。
+- 每行译文按内容哈希**缓存**(`~/.cc-translate/cache`),重绘和重复文本零成本。两种模式共享同一缓存。
+- section 模式下,进行中块的文本会缓冲在 `~/.cc-translate/msgstate`(落盘暴露面与缓存相同);消息完成后该文件即删除,过期残留文件 24 小时后清理。
 - 用 `openai` 时每段约一次 API 调用(~$0.0001),流式输出会比纯英文多约 1 秒/段的延迟;`google` 更快但质量略低。
 
 ## 🔗 关注项目
