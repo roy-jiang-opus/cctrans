@@ -24,9 +24,10 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   Cache GC (size cap, state `cacheMaxMB`) runs ONLY from CLI commands (on/off daily stamp,
   `cache gc`) — never from the hook (directory sweeps must not eat the 9s delta budget).
 - `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard.
-  Per-message state in `~/.cc-translate/msgstate/<message_id>.json` ({v, mode, index, inFence, buf},
-  atomic tmp+rename, reset at index 0 = new message OR full repaint, unlinked on final, 24h GC):
-  carries the code-fence flag (line mode) and the open section's buffered lines (section mode).
+  Per-message state in `~/.cc-translate/msgstate/<message_id>.json` ({v, mode, index, inFence,
+  inTable, tableBuf, buf}, atomic tmp+rename, reset at index 0 = new message OR full repaint,
+  unlinked on final, 24h GC): carries the code-fence flag, the in-a-table flag + open table's raw
+  rows (all modes), and the open section's buffered lines (section/message).
   Section mode commits state BEFORE translating — a crash/timeout drops a block's translation,
   never replays it at a wrong position. An index gap (a delta crashed unsaved) drops the buffer.
 - `hook/user-prompt-submit.js` — input translation hook (beta): non-English prompt → English additionalContext + "respond in English" instruction. Triggers on an ABSOLUTE non-Latin char count (`inputMinChars`, default 4; `cctrans input threshold <n>`) — never a ratio (paths/identifiers dilute ratios below any threshold; measured 0.13–0.16 on typical code-mixed prompts).
@@ -35,6 +36,14 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   (heading → `## ↳ 译`, quote → `> ↳ 译`, list → same-width indent to avoid a second
   bullet) — translating the raw line leaves a literal `##`/`-`/`>` after the ↳ marker.
   Rendering verified live on CC 2.1.170 (heading bold on both lines, quote bar kept).
+  MARKDOWN TABLES: classify tags a header-row + `|---|` delimiter + following pipe rows as
+  kind `table` (threaded across deltas via `inTable`, like `inFence`); they pass through as a
+  UNIT — translating a row, or splicing a ZH line between header and delimiter, breaks CommonMark
+  table parsing (the splitting bug). A TRANSLATED COPY of the table (cells translated, code/
+  already-target cells kept, `|---|` regenerated) is appended after it, separated by a blank line;
+  the original always passes through untouched so a glitch in the copy can't break the source.
+  The delta's trailing-`\n` artifact (final `''` from split) must NOT close an open table.
+  Verified live on CC 2.1.172 (native box tables, EN then translated box, line + section modes).
   Also the section-mode engine (`cctrans mode section`, default `line`): `planSections`
   (pure sync segmentation — so the hook can persist state before any await) +
   `renderSections` (translate + splice). A section = a maximal prose run; boundaries are
@@ -108,8 +117,8 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   registry only) — the npm link lives in the repo About homepage + README badges.
 
 ## Testing
-- `npm test` — 7 offline deterministic suites (fence, markdown, section, latin, message,
-  project, stats): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1 cache, so NO network.
+- `npm test` — 8 offline deterministic suites (fence, markdown, section, latin, message,
+  project, stats, table): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1 cache, so NO network.
   CI runs them on push/PR (node 18/20/22/24) and before npm publish.
 - `node bin/cctrans.js test "<text>"` — engine only.
 - Live TUI: register the hook in a throwaway dir's `.claude/settings.json`, drive

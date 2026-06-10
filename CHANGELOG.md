@@ -9,6 +9,14 @@ Release notes are also published on
 
 ## [Unreleased]
 
+### Fixed
+
+- **Markdown tables are no longer split/broken by the overlay.** A table's
+  header, `|---|` delimiter, and rows now pass through as a unit (previously a
+  translated line was spliced between the header and delimiter, destroying the
+  table). A translated copy of the table is appended after it. Works in line,
+  section, and message modes; table state threads across streaming deltas.
+
 ### Added
 
 - **4 Latin-script target languages**: Spanish (`es`), Portuguese (`pt`), French

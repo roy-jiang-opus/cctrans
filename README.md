@@ -209,6 +209,7 @@ cctrans cache    # translation-cache size; clear / gc to manage it (200 MB cap b
 - Every translated line is **cached** by content hash (`~/.cc-translate/cache`, 200 MB cap enforced daily); repaints and repeated text cost nothing. All modes share the cache.
 - In section/message mode an in-flight block's text is buffered in `~/.cc-translate/msgstate` (same at-rest exposure as the cache); the file is removed when the message completes and stale ones are swept after 24h.
 - With `openai`, each chunk is roughly one API call (~$0.0001) and adds about 1s of latency vs. plain English; `google` is faster with slightly lower quality.
+- **Markdown tables** stay intact: the table passes through untouched (so Claude Code's native box-drawing rendering is preserved) and a translated copy of the table is shown right after it — no more rows split apart by an interleaved translation.
 
 ## 🔗 Stay in the loop
 

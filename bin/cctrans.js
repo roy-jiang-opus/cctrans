@@ -411,8 +411,9 @@ async function renderText(text) {
       target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000,
     });
   } else {
+    // final:true so a trailing markdown table flushes its translated copy.
     displayContent = (await buildDisplayContent(text, {
-      target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000,
+      target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000, final: true,
     })).displayContent;
   }
   if (displayContent == null) { process.stdout.write(text + '\n'); return; }
