@@ -45,7 +45,7 @@ npm install -g cctrans && cctrans install
 
 インストールがフックを登録し、セットアップを案内します(言語 → 表示モード → バックエンド → API キー → 即時検証)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。
 
-**すでにインストール済み?** `npm update -g cctrans` で更新——次の返信から反映されます(フックはチャンクごとに毎回ディスクから実行されます)。設定、キー、登録済みフックはそのまま、再セットアップは不要です。
+**すでにインストール済み?** `npm install -g cctrans@latest` で更新——次の返信から反映されます(フックはチャンクごとに毎回ディスクから実行されます)。設定、キー、登録済みフックはそのまま、再セットアップは不要です。
 
 <details>
 <summary>ソースからインストール</summary>
@@ -184,7 +184,7 @@ cctrans lang zh-Hans  # 簡体字中国語(デフォルト)
 ## 🔗 プロジェクトをフォロー
 
 - ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans) でリリース更新を受け取る
-- 📦 **npm** —— [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · アップグレード:`npm update -g cctrans`
+- 📦 **npm** —— [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · アップグレード:`npm install -g cctrans@latest`
 - 🗺 **ロードマップ** —— [ROADMAP.md](ROADMAP.md):実装済みと予定の機能
 - 📚 **調査資料** —— [MOTIVATION.md](MOTIVATION.md):このプロジェクトの背景にある非英語トークン税のデータ
 - 🐛 **Issue / 言語リクエスト** —— [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)

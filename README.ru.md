@@ -45,7 +45,7 @@ npm install -g cctrans && cctrans install
 
 Установка регистрирует хуки и проводит через настройку (язык → режим отображения → бэкенд → API-ключ → живая проверка). Затем **перезапустите Claude Code** — ответы станут двуязычными. Переключайте в любой момент, набрав `!cctrans off` / `!cctrans on` в поле ввода Claude Code (`!` — встроенный bash-режим CC: без вызова модели, без токенов).
 
-**Уже установлено?** Обновляйтесь командой `npm update -g cctrans` — изменения вступают в силу со следующего ответа (хук на каждом фрагменте запускается с диска заново); ваши настройки, ключи и зарегистрированные хуки не затрагиваются, повторная настройка не нужна.
+**Уже установлено?** Обновляйтесь командой `npm install -g cctrans@latest` — изменения вступают в силу со следующего ответа (хук на каждом фрагменте запускается с диска заново); ваши настройки, ключи и зарегистрированные хуки не затрагиваются, повторная настройка не нужна.
 
 <details>
 <summary>Установка из исходников</summary>
@@ -185,7 +185,7 @@ cctrans lang zh-Hans  # упрощённый китайский (по умолч
 ## 🔗 Следите за проектом
 
 - ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans) — получайте обновления релизов
-- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · обновление: `npm update -g cctrans`
+- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · обновление: `npm install -g cctrans@latest`
 - 🗺 **Дорожная карта** — [ROADMAP.md](ROADMAP.md): что готово, что дальше
 - 📚 **Исследование** — [MOTIVATION.md](MOTIVATION.md): данные о неанглийском «токенном налоге», лёгшие в основу проекта
 - 🐛 **Issues / запросы языков** — [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)

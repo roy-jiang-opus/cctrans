@@ -45,7 +45,7 @@ npm install -g cctrans && cctrans install
 
 The install registers the hooks and walks you through setup (language → display mode → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
 
-**Already installed?** Update with `npm update -g cctrans` — it takes effect from the next reply (the hook runs fresh from disk on every chunk); your settings, keys, and registered hooks are untouched, no re-setup needed.
+**Already installed?** Update with `npm install -g cctrans@latest` — it takes effect from the next reply (the hook runs fresh from disk on every chunk); your settings, keys, and registered hooks are untouched, no re-setup needed.
 
 <details>
 <summary>Install from source</summary>
@@ -184,7 +184,7 @@ Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chine
 ## 🔗 Stay in the loop
 
 - ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans) to get release updates
-- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · upgrade with `npm update -g cctrans`
+- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · upgrade with `npm install -g cctrans@latest`
 - 🗺 **Roadmap** — [ROADMAP.md](ROADMAP.md): what's shipped, what's next
 - 📚 **Research** — [MOTIVATION.md](MOTIVATION.md): the non-English token-tax data behind this project
 - 🐛 **Issues / language requests** — [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)

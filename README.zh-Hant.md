@@ -45,7 +45,7 @@ npm install -g cctrans && cctrans install
 
 安裝會註冊鉤子並引導你完成設定(語言 → 顯示模式 → 後端 → API key → 即時驗證)。然後**重新啟動 Claude Code**——回覆變成雙語。隨時在 Claude Code 輸入框輸入 `!cctrans off` / `!cctrans on` 開關(`!` 是 CC 內建 bash 模式,不呼叫模型、不花 token)。
 
-**已經裝過?** 用 `npm update -g cctrans` 更新——從下一則回覆起生效(鉤子每個分塊都從磁碟重新執行);你的設定、金鑰和已註冊的鉤子原樣保留,無需重新設定。
+**已經裝過?** 用 `npm install -g cctrans@latest` 更新——從下一則回覆起生效(鉤子每個分塊都從磁碟重新執行);你的設定、金鑰和已註冊的鉤子原樣保留,無需重新設定。
 
 <details>
 <summary>從原始碼安裝</summary>
@@ -184,7 +184,7 @@ cctrans lang zh-Hans  # 簡體中文(預設)
 ## 🔗 關注專案
 
 - ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans),第一時間獲取版本更新
-- 📦 **npm** —— [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · 升級:`npm update -g cctrans`
+- 📦 **npm** —— [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · 升級:`npm install -g cctrans@latest`
 - 🗺 **路線圖** —— [ROADMAP.md](ROADMAP.md):已完成與計劃中的功能
 - 📚 **調研** —— [MOTIVATION.md](MOTIVATION.md):本專案背後的非英語 token 稅資料
 - 🐛 **Issue / 新語言請求** —— [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)

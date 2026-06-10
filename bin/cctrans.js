@@ -19,6 +19,7 @@ const { findTranscript, extractReply } = require('../src/transcript');
 const { listBackends, getBackend } = require('../src/backends');
 const { getLang, listLangs, normalizeLang } = require('../src/langs');
 
+const VERSION = require('../package.json').version;
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
 const INPUT_HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'user-prompt-submit.js');
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
@@ -112,7 +113,7 @@ function status() {
   const installed = hookInstalled();
   const b = getBackend(st.backend);
   const lang = getLang(st.target);
-  console.log(C.bold('cctrans status'));
+  console.log(C.bold('cctrans status') + C.dim('  v' + VERSION));
   console.log('  enabled : ' + (st.enabled ? C.green('ON') : C.red('OFF')));
   console.log('  hook    : ' + (installed ? C.green('installed') : C.red('not installed') + C.dim('  (run: cctrans install)')));
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
@@ -214,6 +215,7 @@ ${C.bold('Setup')}
 ${C.bold('Manual / test')}
   cctrans last [N]               translate the latest (or N-back) assistant reply
   cctrans test <text...>         translate ad-hoc English text
+  cctrans --version              print the installed version
 
 ${C.dim('Tip: toggle from inside Claude Code by typing  !cctrans off  /  !cctrans on')}`);
 }
@@ -307,6 +309,7 @@ async function main() {
       if (!text) { console.error('usage: cctrans test <text>'); process.exit(1); }
       await renderText(text); break;
     }
+    case 'version': case '--version': case '-v': console.log(VERSION); break;
     case 'help': case '--help': case '-h': case undefined: help(); break;
     default: console.error('unknown command: ' + cmd + '\n'); help(); process.exit(1);
   }

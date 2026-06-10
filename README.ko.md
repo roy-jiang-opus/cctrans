@@ -45,7 +45,7 @@ npm install -g cctrans && cctrans install
 
 설치가 훅을 등록하고 설정을 안내합니다(언어 → 표시 모드 → 백엔드 → API 키 → 실시간 검증). 그다음 **Claude Code를 재시작** — 응답이 이중 언어가 됩니다. Claude Code 입력창에 `!cctrans off` / `!cctrans on`을 입력해 언제든 전환(`!`는 CC 내장 bash 모드 — 모델 호출 없음, 토큰 없음).
 
-**이미 설치되어 있나요?** `npm update -g cctrans`로 업데이트하세요 — 다음 응답부터 바로 적용됩니다(훅은 청크마다 디스크에서 새로 실행됨). 설정, 키, 등록된 훅은 그대로 유지되며 재설정이 필요 없습니다.
+**이미 설치되어 있나요?** `npm install -g cctrans@latest`로 업데이트하세요 — 다음 응답부터 바로 적용됩니다(훅은 청크마다 디스크에서 새로 실행됨). 설정, 키, 등록된 훅은 그대로 유지되며 재설정이 필요 없습니다.
 
 <details>
 <summary>소스에서 설치</summary>
@@ -184,7 +184,7 @@ cctrans lang zh-Hans  # 간체 중국어 (기본)
 ## 🔗 프로젝트 팔로우
 
 - ⭐ **Star / Watch** [github.com/roy-jiang-opus/cctrans](https://github.com/roy-jiang-opus/cctrans) — 릴리스 업데이트 받기
-- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · 업그레이드: `npm update -g cctrans`
+- 📦 **npm** — [npmjs.com/package/cctrans](https://www.npmjs.com/package/cctrans) · 업그레이드: `npm install -g cctrans@latest`
 - 🗺 **로드맵** — [ROADMAP.md](ROADMAP.md): 완료된 것과 예정된 것
 - 📚 **리서치** — [MOTIVATION.md](MOTIVATION.md): 이 프로젝트 배경의 비영어 토큰세 데이터
 - 🐛 **이슈 / 언어 요청** — [github.com/roy-jiang-opus/cctrans/issues](https://github.com/roy-jiang-opus/cctrans/issues)
