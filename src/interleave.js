@@ -154,12 +154,20 @@ function zhLineFor(p, zh, marker, demoteStructure) {
   return p.prefix + marker + zh;
 }
 
-// How to place the Chinese line under the English line (line mode).
+// How to place the Chinese line under the English line (line mode, append).
 // hardBreak=true uses a CommonMark hard line break (two trailing spaces) so the
 // two lines stay separate even if displayContent is markdown-rendered.
 function pair(p, zh, marker, hardBreak) {
   const br = hardBreak ? '  \n' : '\n';
   return p.line + br + zhLineFor(p, zh, marker, false);
+}
+
+// Replace mode (line mode only): the translation shown IN PLACE of the English,
+// keeping the line's own block structure (the real bullet/heading/quote, NOT
+// the indent-without-marker form, since there is no English line above it) and
+// no ↳ marker — it reads as a native target-language line.
+function replaceLine(p, zh) {
+  return p.prefix + zh;
 }
 
 // Returns { displayContent, inFence, inTable, tableBuf }:
@@ -201,13 +209,17 @@ async function buildDisplayContent(rawDelta, opts) {
 
   if (!prose.length && !tableFlushes.length) return { displayContent: null, inFence, inTable, tableBuf };
 
+  const replace = opts.display === 'replace';
   if (prose.length) {
     const zh = await translateLines(prose.map((x) => x.p.content), {
       target, backend: opts.backend, model: opts.model, timeoutMs: opts.timeoutMs,
     });
     for (let j = 0; j < prose.length; j++) {
       const t = zh[j]; const p = prose[j].p;
-      if (t && t.trim() && t.trim() !== p.content.trim()) out[prose[j].pos] = pair(p, t, marker, hardBreak);
+      // Identity/empty/failed -> keep the original line (never blank it out).
+      if (t && t.trim() && t.trim() !== p.content.trim()) {
+        out[prose[j].pos] = replace ? replaceLine(p, t.trim()) : pair(p, t, marker, hardBreak);
+      }
     }
   }
   if (tableFlushes.length) {

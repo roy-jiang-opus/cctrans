@@ -18,6 +18,11 @@ const MSGSTATE_DIR = path.join(BASE, 'msgstate');
 
 // Display layouts. Validate against this list everywhere (CLI, setup, hook).
 const MODES = ['line', 'section', 'message'];
+// How a translated line is shown: 'append' (under the English) or 'replace'
+// (the translation shown in place OF the English). Replace only takes effect in
+// line mode — section/message stream the English first by design, so there is
+// nothing on screen to replace.
+const DISPLAYS = ['append', 'replace'];
 
 // Per-project overrides: a .cc-translate.json next to (or above) the working
 // directory overrides these fields of the global state for that project.
@@ -25,7 +30,7 @@ const MODES = ['line', 'section', 'message'];
 // azureEndpoint: a repo-controlled endpoint that receives the Azure key would
 // be an exfiltration vector, so endpoint config stays global-only.
 const PROJECT_FILE = '.cc-translate.json';
-const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'inputEn', 'inputMinChars'];
+const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'display', 'inputEn', 'inputMinChars'];
 
 // Walk up from cwd looking for a project file (stops at the filesystem root).
 function findProjectFile(cwd) {
@@ -67,6 +72,7 @@ function defaults() {
     azureEndpoint: 'https://api.cognitive.microsofttranslator.com',
     marker: '↳ ', // prefix on each translated line
     mode: 'line', // display layout, one of MODES: line / section / message
+    display: 'append', // 'append' (ZH under EN) or 'replace' (ZH in place of EN; line mode only)
     inputEn: false, // input translation (beta, prompt -> English) off until enabled
     inputMinChars: 4, // non-Latin chars in a prompt that trigger input translation
     cacheMaxMB: 200, // translation-cache size cap, enforced by the periodic GC
@@ -89,6 +95,7 @@ function getState(cwd) {
         for (const k of PROJECT_OVERRIDABLE) {
           if (proj[k] === undefined) continue;
           if (k === 'mode' && !MODES.includes(proj[k])) continue; // ignore invalid
+          if (k === 'display' && !DISPLAYS.includes(proj[k])) continue; // ignore invalid
           merged[k] = proj[k];
         }
         merged.projectFile = file;
@@ -111,6 +118,7 @@ function setState(patch) {
     azureEndpoint: next.azureEndpoint,
     marker: next.marker,
     mode: next.mode,
+    display: next.display,
     inputEn: next.inputEn,
     inputMinChars: next.inputMinChars,
     cacheMaxMB: next.cacheMaxMB,
@@ -121,4 +129,4 @@ function setState(patch) {
   return next;
 }
 
-module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, MODES, PROJECT_FILE, ensureDirs, getState, setState, defaults, sweepMsgState, findProjectFile };
+module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, MODES, DISPLAYS, PROJECT_FILE, ensureDirs, getState, setState, defaults, sweepMsgState, findProjectFile };

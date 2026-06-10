@@ -29,6 +29,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 
 - 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
 - 🧩 **Three layouts** — per-line interleave, per-block (`cctrans mode section`), or whole-reply (`cctrans mode message`)
+- 🔄 **Append or replace** — show the translation under the English, or `cctrans display replace` to show only the translation in its place
 - 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
 - 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
 - ⌨️ **Input translation (beta)** — type prompts in your language; the model works — and replies — in English (`cctrans input on`)
@@ -105,6 +106,7 @@ Claude streams English
 | `cctrans status` | show state (toggle, hook, backend, language) |
 | `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | layout: per line, per block, or whole reply |
+| `cctrans display [append\|replace]` | show the translation under the English, or in place of it (line mode) |
 | `cctrans backend <id>` | switch translation engine |
 | `cctrans backends` | list engines and their availability |
 | `cctrans doctor` | diagnose: hooks, Claude Code version, backends, keys, last hook error |
@@ -139,6 +141,14 @@ cctrans mode section   # per block · cctrans mode message — whole reply · cc
 ```
 
 > In section/message mode a translation appears **when its block (or the reply) completes**, not while it streams — with a slow backend (e.g. `claude-code`, 3–6 s/call) that pause is noticeable, so API backends feel best here. If a block's translation fails, the English is unaffected and that block simply stays untranslated.
+
+**Append or replace.** By default the translation is shown *under* the English (bilingual). Prefer to read only your language? `cctrans display replace` shows the translation **in place of** each English line instead:
+
+```bash
+cctrans display replace   # only the translation · cctrans display append — back to bilingual
+```
+
+Replace takes effect in **line mode** (section/message stream the English first by design, so there is nothing to replace). The transcript and the model's context stay 100% English either way; a line that can't be translated keeps its original text, so nothing ever vanishes.
 
 ## 🌐 Translation backends
 

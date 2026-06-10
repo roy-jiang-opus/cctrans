@@ -17,7 +17,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / >9000 chars → emit nothing → original English.
 
 ## Files
-- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/backend/backends/setup/key/input/
+- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/backend/backends/setup/key/input/
   install/uninstall/last/test/doctor/stats/cache/--version. `doctor` is the counterpart to the
   fail-safe design (failures are silent → doctor explains them: hook registration incl. stale
   paths, CC version >= 2.1.152, live backend probes bypassing the cache, last-error.json).
@@ -56,6 +56,11 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   quote runs keep `> `). Translation stays per-LINE, so both modes share the sha1 cache
   and backend prompts are untouched. The trailing `''` from split('\n') is the delta's
   trailing-\n encoding, NOT a blank line (all non-final deltas end with \n; final never does).
+  DISPLAY (`cctrans display append|replace`, default append): replace shows the translation IN
+  PLACE of the English (`prefix + zh` — real bullet/heading, no ↳ marker) instead of pair()'s
+  EN+↳ZH. Replace is LINE-MODE ONLY — section/message stream the English first by design and
+  suppressing it would need `displayContent:""` (forbidden). Identity/failed lines keep the
+  original verbatim (never blanked); code/blank/target/tables unchanged.
 - `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + Latin es/pt/fr/de + internal
   en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, token-cost `ratio` (used
   by stats), and already-target detection — `script` regex ratio for non-Latin, conservative

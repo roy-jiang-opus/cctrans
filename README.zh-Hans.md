@@ -29,6 +29,7 @@
 
 - 🪞 **行内双语显示** —— 译文随回复流式出现在每行英文下方,就在对话里
 - 🧩 **三种排版** —— 逐行对照、按块成组(`cctrans mode section`),或整条回复成组(`cctrans mode message`)
+- 🔄 **追加或替换** —— 在英文下方显示译文,或用 `cctrans display replace` 在原位只显示译文
 - 🧾 **非破坏** —— 转录与模型上下文保持纯英文;skills、文档、代码不受影响
 - 🆓 **主对话零 token** —— 翻译走独立便宜后端(也有免费选项),完全在 Claude Code 会话之外
 - ⌨️ **输入翻译(beta)** —— 用母语打字,模型按英文工作、按英文回复(`cctrans input on`)
@@ -105,6 +106,7 @@ Claude 流式输出英文
 | `cctrans status` | 查看状态(开关、钩子、后端、语言) |
 | `cctrans lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | 排版:逐行、按块,或整条回复 |
+| `cctrans display [append\|replace]` | 在英文下方显示译文,或在原位替换它(line 模式) |
 | `cctrans backend <id>` | 切换翻译引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
 | `cctrans doctor` | 诊断:钩子、Claude Code 版本、后端、密钥、最近一次钩子错误 |
@@ -139,6 +141,14 @@ cctrans mode section   # 按块 · cctrans mode message —— 整条回复 · c
 ```
 
 > section/message 模式下,译文在**所在块(或整条回复)完成时**才出现,而不是边流式边出——后端慢时(如 `claude-code`,3–6 秒/次)这个停顿会比较明显,所以这里 API 后端体验最好。某个块翻译失败时,英文不受影响,该块只是保持未翻译。
+
+**追加或替换。** 默认情况下译文显示在英文*下方*(双语对照)。只想读你自己的语言?`cctrans display replace` 改为**在原位替换**每行英文,只显示译文:
+
+```bash
+cctrans display replace   # 只显示译文 · cctrans display append —— 切回双语
+```
+
+替换在 **line 模式**下生效(section/message 在设计上先把英文流式输出,因此没有可替换的对象)。无论哪种方式,转录和模型上下文都保持 100% 英文;无法翻译的行会保留原文,所以绝不会有内容凭空消失。
 
 ## 🌐 翻译后端
 

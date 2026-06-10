@@ -9,6 +9,14 @@ Release notes are also published on
 
 ## [Unreleased]
 
+### Added
+
+- **Replace display mode** (`cctrans display replace`, default `append`): show only
+  the translation in place of the English, instead of under it. Takes effect in
+  line mode (section/message stream the English first by design). The transcript
+  and model context stay English; an untranslated/identity line keeps its original
+  text. Per-project overridable; setup wizard asks in line mode.
+
 ### Fixed
 
 - **Markdown tables are no longer split/broken by the overlay.** A table's

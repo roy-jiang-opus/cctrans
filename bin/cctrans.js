@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { getState, setState, STATE_FILE, BASE, CACHE_DIR, MODES, PROJECT_FILE, sweepMsgState } = require('../src/config');
+const { getState, setState, STATE_FILE, BASE, CACHE_DIR, MODES, DISPLAYS, PROJECT_FILE, sweepMsgState } = require('../src/config');
 const { buildDisplayContent, planSections, renderSections } = require('../src/interleave');
 const { findTranscript, extractReply } = require('../src/transcript');
 const { listBackends, getBackend } = require('../src/backends');
@@ -27,6 +27,10 @@ const MODE_DESC = {
   line: 'translation under each English line',
   section: 'English streams as-is; each block\'s translation appears when the block completes',
   message: 'English streams as-is; one grouped translation at the end of the reply',
+};
+const DISPLAY_DESC = {
+  append: 'show the translation under the English',
+  replace: 'show only the translation, in place of the English (line mode only)',
 };
 const HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'message-display.js');
 const INPUT_HOOK_PATH = path.resolve(__dirname, '..', 'hook', 'user-prompt-submit.js');
@@ -176,6 +180,8 @@ function status() {
   console.log('  backend : ' + st.backend + (b ? (b.available() ? C.green('  (ready)') : C.red('  (missing: ' + b.needs + ')')) : C.red('  (unknown backend)')));
   console.log('  lang    : ' + st.target + (lang ? C.dim('  (' + lang.name + ')') : C.red('  (unsupported — see: cctrans lang)')));
   console.log('  mode    : ' + st.mode + C.dim('  (' + (MODE_DESC[st.mode] || 'unknown mode') + ')'));
+  console.log('  display : ' + st.display + C.dim('  (' + (DISPLAY_DESC[st.display] || 'unknown') +
+    (st.display === 'replace' && st.mode !== 'line' ? C.red('; no effect in ' + st.mode + ' mode') : '') + ')'));
   console.log('  input   : ' + (st.inputEn ? C.green('ON') : 'off') + C.dim('  (beta; prompt -> English; toggle: cctrans input on|off; triggers at ' + st.inputMinChars + '+ non-Latin chars)'));
   console.log('  keys    : ' + Object.keys(keys.readKeys()).length + ' in ' + keys.KEYS_FILE + C.dim('  (manage: cctrans key)'));
   console.log('  state   : ' + STATE_FILE);
@@ -413,7 +419,8 @@ async function renderText(text) {
   } else {
     // final:true so a trailing markdown table flushes its translated copy.
     displayContent = (await buildDisplayContent(text, {
-      target: st.target, backend: st.backend, model: st.model, marker: st.marker, timeoutMs: 12000, final: true,
+      target: st.target, backend: st.backend, model: st.model, marker: st.marker,
+      display: st.display, timeoutMs: 12000, final: true,
     })).displayContent;
   }
   if (displayContent == null) { process.stdout.write(text + '\n'); return; }
@@ -439,6 +446,7 @@ ${C.bold('Control')}
   cctrans status                 show current state
   cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi, es, pt, fr, de)
   cctrans mode [line|section|message]  layout: per line / per block / whole reply
+  cctrans display [append|replace]     show ZH under the English, or in place of it (line mode)
   cctrans backend <id>           choose translation engine
   cctrans backends               list engines + availability
 
@@ -450,7 +458,7 @@ ${C.bold('Diagnostics')}
 ${C.bold('Setup')}
   cctrans install                register hooks (+ link cctrans), then run setup
   cctrans setup                  interactive wizard: language, display mode, backend, API keys
-                            (flags: --lang --mode --backend --key --input --yes)
+                            (flags: --lang --mode --display --backend --key --input --yes)
   cctrans key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
   cctrans uninstall              remove the hooks
@@ -498,6 +506,22 @@ async function main() {
       noteProjectOverride('mode', m);
       break;
     }
+    case 'display': {
+      const d = rest[0];
+      if (!d) {
+        const st = getState();
+        console.log('display = ' + st.display);
+        for (const dd of DISPLAYS) console.log(C.dim('  ' + dd.padEnd(9) + DISPLAY_DESC[dd]));
+        noteProjectOverride('display', st.display);
+        break;
+      }
+      if (!DISPLAYS.includes(d)) { console.error('usage: cctrans display <' + DISPLAYS.join('|') + '>'); process.exit(1); }
+      const n = setState({ display: d });
+      console.log(C.green('✓') + ' display = ' + d + C.dim('  (' + DISPLAY_DESC[d] + ')') +
+        (d === 'replace' && n.mode !== 'line' ? C.red('  (note: replace only takes effect in line mode; current mode is ' + n.mode + ')') : ''));
+      noteProjectOverride('display', d);
+      break;
+    }
     case 'lang': {
       const code = rest[0];
       if (!code) {
@@ -526,6 +550,7 @@ async function main() {
       const okSetup = await require('../src/setup').runSetup({
         lang: flag('--lang'),
         mode: flag('--mode'),
+        display: flag('--display'),
         backend: flag('--backend'),
         key: flag('--key'),
         input: flag('--input'),

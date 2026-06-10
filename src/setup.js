@@ -6,7 +6,7 @@
 // never read.
 
 const readline = require('node:readline/promises');
-const { getState, setState, MODES } = require('./config');
+const { getState, setState, MODES, DISPLAYS } = require('./config');
 const { listLangs, getLang, normalizeLang } = require('./langs');
 const { listBackends, getBackend } = require('./backends');
 const keys = require('./keys');
@@ -60,6 +60,21 @@ async function runSetup(opts) {
     }
     if (!MODES.includes(mode)) { console.error(C.red('unknown mode: ' + mode + ' (available: ' + MODES.join(', ') + ')')); return false; }
 
+    // 2b. Append vs replace (only meaningful in line mode; ask only there)
+    let display = opts.display;
+    if (!display) {
+      if (mode === 'line' && rl) {
+        console.log('\n' + C.bold('Translated line') + ':');
+        console.log('  1. append   ' + C.dim('show the translation under each English line (bilingual)'));
+        console.log('  2. replace  ' + C.dim('show only the translation, in place of the English'));
+        const a = await ask('Pick a number or name', getState().display);
+        display = a === '1' ? 'append' : a === '2' ? 'replace' : a;
+      } else {
+        display = getState().display;
+      }
+    }
+    if (!DISPLAYS.includes(display)) { console.error(C.red('unknown display: ' + display + ' (available: ' + DISPLAYS.join(', ') + ')')); return false; }
+
     // 3. Backend
     let backend = opts.backend;
     if (!backend) {
@@ -98,9 +113,9 @@ async function runSetup(opts) {
     }
 
     // 6. Save config
-    setState({ target: lang, mode, backend, inputEn });
+    setState({ target: lang, mode, display, backend, inputEn });
     console.log('\n' + C.green('✓') + ' saved: lang=' + lang + ' (' + getLang(lang).name + '), mode=' + mode +
-      ', backend=' + backend + ', input=' + (inputEn ? 'on' : 'off') +
+      ', display=' + display + ', backend=' + backend + ', input=' + (inputEn ? 'on' : 'off') +
       (b.available() ? '' : C.red('  (no key yet — will fall back to google)')));
 
     // 7. Live verification
