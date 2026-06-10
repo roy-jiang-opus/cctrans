@@ -85,14 +85,18 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600), the ONLY key source — env vars are never read. Must NOT require config.js (config requires keys for the default backend).
-- `src/setup.js` — interactive wizard (lang → mode → append/replace → backend → key entry →
-  input translation → live verify); flags --lang --mode --display --backend --key --input --yes.
-  Menu steps use src/prompt.js select() (arrow keys); non-interactive (--yes / no TTY) falls back
-  to flags then current state.
-- `src/prompt.js` — zero-dep interactive prompts: arrow-key `select()` (raw-mode stdin + ANSI,
-  handles batched keystrokes, Ctrl-C aborts) and text `question()`. Both fall back to the
-  initial/default value off-TTY without hanging (test/prompt.js + a watchdog lock this in). No
-  npm deps — the package stays dependency-free.
+- `src/setup.js` — back/forward setup WIZARD (interactive): a step list (lang → mode →
+  append/replace → backend → key → input) driven by index, with ←/Backspace going back
+  (choices preserved) and conditional steps auto-skipped (display only in line mode; key only
+  when the backend needs one and it's unset), ending in an EDITABLE REVIEW (↑/↓ over the chosen
+  settings + Save; Enter on a setting jumps back to re-pick it and returns to review; Enter/S on
+  Save writes + verifies). Non-interactive (--yes / no TTY) seeds a draft from flags then current
+  state and saves directly, no UI. Flags --lang --mode --display --backend --key --input --yes.
+- `src/prompt.js` — zero-dep interactive prompts. `select()`: arrow-key menu (raw-mode stdin +
+  ANSI), ↑/↓ or j/k (skips `sep` separator rows), 1-9 jump, per-option `hotkey`, →/Enter confirm,
+  ←/Backspace resolve the `BACK` sentinel when `allowBack`, optional `footer`, Ctrl-C aborts;
+  handles batched keystrokes token-by-token. `question()`: text input. Both fall back to the
+  initial/default off-TTY without hanging (test/prompt.js + watchdog). No npm deps.
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`.
   `getState(cwd)` overlays a `.cc-translate.json` found by walking UP from cwd (hooks pass
   stdin cwd, CLI passes process.cwd()): whitelist-only overrides incl. `enabled` (per-repo

@@ -12,16 +12,26 @@ const C = {
   dim: (s) => '\x1b[2m' + s + '\x1b[0m',
   cyan: (s) => '\x1b[36m' + s + '\x1b[0m',
   green: (s) => '\x1b[32m' + s + '\x1b[0m',
+  red: (s) => '\x1b[31m' + s + '\x1b[0m',
   bold: (s) => '\x1b[1m' + s + '\x1b[0m',
 };
 
+// Sentinels a select() can resolve to (besides an option value):
+//   BACK  — the user pressed ← / Backspace to step backward
+const BACK = Symbol('cctrans.prompt.BACK');
+
 // Arrow-key single-select.
-//   opts: { title?, options:[{label, hint?, value}], initialValue? }
-// Returns the chosen value. ↑/↓ or k/j move, 1-9 jump, Enter confirms, Ctrl-C
-// aborts the process (exit 130). Non-TTY -> resolves initialValue immediately.
+//   opts: { title?, footer?, options:[{label, hint?, value, sep?}], initialValue?, allowBack? }
+//   - an option with sep:true is a non-selectable separator/heading row
+//   - allowBack:true makes ← / Backspace resolve BACK (for wizard back-nav)
+// Returns the chosen value (or BACK). ↑/↓ or k/j move (skipping separators),
+// 1-9 jump, Enter confirms, Ctrl-C aborts (exit 130). Non-TTY -> resolves
+// initialValue immediately (never BACK).
 function select(opts) {
   const options = opts.options || [];
-  let idx = options.findIndex((o) => o.value === opts.initialValue);
+  const selectable = (i) => options[i] && !options[i].sep;
+  let idx = options.findIndex((o) => !o.sep && o.value === opts.initialValue);
+  if (idx < 0) idx = options.findIndex((o) => !o.sep);
   if (idx < 0) idx = 0;
   if (!process.stdin.isTTY || !options.length) {
     return Promise.resolve(options.length ? options[idx].value : undefined);
@@ -31,20 +41,30 @@ function select(opts) {
     const out = process.stdout;
     const stdin = process.stdin;
     if (opts.title) out.write(opts.title + '\n');
+    const rows = options.length + (opts.footer ? 1 : 0);
     out.write('\x1b[?25l'); // hide cursor
 
     const draw = (first) => {
-      if (!first) out.write('\x1b[' + options.length + 'A'); // up N lines
+      if (!first) out.write('\x1b[' + rows + 'A'); // up over the option block (+footer)
       for (let i = 0; i < options.length; i++) {
         const o = options[i];
+        if (o.sep) { out.write('\r\x1b[2K' + (o.label || '') + '\n'); continue; }
         const sel = i === idx;
         const label = sel ? C.cyan('❯ ') + C.bold(o.label) : '  ' + o.label;
         const hint = o.hint ? '  ' + C.dim(o.hint) : '';
         out.write('\r\x1b[2K' + label + hint + '\n');
       }
+      if (opts.footer) out.write('\r\x1b[2K' + C.dim(opts.footer) + '\n');
     };
     draw(true);
 
+    const move = (dir) => { // dir +1/-1, skip separators, wrap
+      const n = options.length;
+      for (let step = 0; step < n; step++) {
+        idx = (idx + dir + n) % n;
+        if (selectable(idx)) break;
+      }
+    };
     const cleanup = () => {
       try { stdin.setRawMode(false); } catch (e) {}
       stdin.pause();
@@ -56,15 +76,18 @@ function select(opts) {
     // the whole string.
     const onData = (buf) => {
       const s = buf.toString();
-      const n = options.length;
       let i = 0, moved = false;
       while (i < s.length) {
-        if (s.startsWith('\x1b[A', i)) { idx = (idx - 1 + n) % n; i += 3; moved = true; }
-        else if (s.startsWith('\x1b[B', i)) { idx = (idx + 1) % n; i += 3; moved = true; }
-        else if (s[i] === 'k') { idx = (idx - 1 + n) % n; i += 1; moved = true; }
-        else if (s[i] === 'j') { idx = (idx + 1) % n; i += 1; moved = true; }
-        else if (s[i] >= '1' && s[i] <= '9') { const t = +s[i] - 1; if (t < n) { idx = t; moved = true; } i += 1; }
+        if (s.startsWith('\x1b[A', i)) { move(-1); i += 3; moved = true; }
+        else if (s.startsWith('\x1b[B', i)) { move(1); i += 3; moved = true; }
+        else if (s.startsWith('\x1b[C', i)) { if (moved) draw(); cleanup(); resolve(options[idx].value); return; } // → = confirm
+        else if (s.startsWith('\x1b[D', i)) { if (opts.allowBack) { cleanup(); resolve(BACK); return; } i += 3; } // ← = back
+        else if (s[i] === 'k') { move(-1); i += 1; moved = true; }
+        else if (s[i] === 'j') { move(1); i += 1; moved = true; }
+        else if (s[i] >= '1' && s[i] <= '9') { const t = +s[i] - 1; if (selectable(t)) { idx = t; moved = true; } i += 1; }
+        else if (/[a-zA-Z]/.test(s[i])) { const o = options.find((o) => o.hotkey && o.hotkey === s[i].toLowerCase()); if (o) { cleanup(); resolve(o.value); return; } i += 1; }
         else if (s[i] === '\r' || s[i] === '\n') { if (moved) draw(); cleanup(); resolve(options[idx].value); return; }
+        else if ((s[i] === '\x7f' || s[i] === '\b') && opts.allowBack) { cleanup(); resolve(BACK); return; } // Backspace = back
         else if (s[i] === '\x03') { cleanup(); out.write('\n'); process.exit(130); } // Ctrl-C
         else i += 1; // skip unknown bytes
       }
@@ -88,4 +111,4 @@ async function question(prompt, def) {
   }
 }
 
-module.exports = { select, question, C };
+module.exports = { select, question, C, BACK };
