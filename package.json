@@ -39,6 +39,6 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/fence.js"
+    "test": "node test/fence.js && node test/markdown.js"
   }
 }

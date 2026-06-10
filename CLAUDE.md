@@ -20,7 +20,11 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `bin/cctrans.js` — CLI: on/off/toggle/status/lang/backend/backends/setup/key/input/install/uninstall/last/test
 - `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard
 - `hook/user-prompt-submit.js` — input translation hook (beta): non-English prompt → English additionalContext + "respond in English" instruction. Triggers on an ABSOLUTE non-Latin char count (`inputMinChars`, default 4; `cctrans input threshold <n>`) — never a ratio (paths/identifiers dilute ratios below any threshold; measured 0.13–0.16 on typical code-mixed prompts).
-- `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output
+- `src/interleave.js` — classify lines (prose/code/target-lang/blank), build interleaved output.
+  Block markdown is split off before translation and re-applied on the translated line
+  (heading → `## ↳ 译`, quote → `> ↳ 译`, list → same-width indent to avoid a second
+  bullet) — translating the raw line leaves a literal `##`/`-`/`>` after the ↳ marker.
+  Rendering verified live on CC 2.1.170 (heading bold on both lines, quote bar kept).
 - `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)

@@ -16,6 +16,22 @@ function looksLikeCodeish(s) {
   return false;
 }
 
+// Leading BLOCK markdown (heading / list marker / blockquote) must be split
+// off before translation: fed to an MT backend it gets kept or mangled, and
+// re-rendered mid-line after the ↳ marker it shows up as literal "##" / "-" /
+// ">" (the translated line no longer starts with the prefix, so the renderer
+// treats it as text). Translate the content only; re-apply structure when
+// building the translated line.
+function splitBlockPrefix(line) {
+  let m = line.match(/^(\s{0,3}#{1,6}\s+)(.*)$/); // heading
+  if (m) return { prefix: m[1], content: m[2], block: 'heading' };
+  m = line.match(/^(\s*(?:[-*+]|\d{1,3}[.)])\s+)(.*)$/); // list item
+  if (m) return { prefix: m[1], content: m[2], block: 'list' };
+  m = line.match(/^(\s*(?:>\s*)+)(.*)$/); // blockquote (possibly nested)
+  if (m) return { prefix: m[1], content: m[2], block: 'quote' };
+  return { prefix: '', content: line, block: null };
+}
+
 // A code fence (```), and therefore "are we inside a code block?", can span
 // multiple MessageDisplay deltas. The caller threads the ending fence state of
 // one delta into the next (keyed by message_id), so classify takes an initial
@@ -30,7 +46,9 @@ function classify(lines, inFenceInit, target) {
     if (line.trim() === '') { plan.push({ line, kind: 'blank' }); continue; }
     if (isProbablyTarget(line, target)) { plan.push({ line, kind: 'target' }); continue; }
     if (looksLikeCodeish(line)) { plan.push({ line, kind: 'code' }); continue; }
-    plan.push({ line, kind: 'prose' });
+    const { prefix, content, block } = splitBlockPrefix(line);
+    if (looksLikeCodeish(content)) { plan.push({ line, kind: 'code' }); continue; } // e.g. "- /path/to/file"
+    plan.push({ line, kind: 'prose', prefix, content, block });
   }
   return { plan, inFence };
 }
@@ -38,9 +56,16 @@ function classify(lines, inFenceInit, target) {
 // How to place the Chinese line under the English line.
 // hardBreak=true uses a CommonMark hard line break (two trailing spaces) so the
 // two lines stay separate even if displayContent is markdown-rendered.
-function pair(enLine, zhLine, marker, hardBreak) {
+// The translated line mirrors the English line's block structure:
+//   heading "## T"  -> "## ↳ 译"   (same heading style)
+//   quote   "> T"   -> "> ↳ 译"    (stays inside the quote)
+//   list    "- T"   -> "  ↳ 译"    (same-width indent — a re-applied "- " would
+//                                   render a second bullet)
+//   plain   "T"     -> "↳ 译"
+function pair(p, zh, marker, hardBreak) {
   const br = hardBreak ? '  \n' : '\n';
-  return enLine + br + marker + zhLine;
+  const prefix = p.block === 'list' ? ' '.repeat(p.prefix.length) : p.prefix;
+  return p.line + br + prefix + marker + zh;
 }
 
 // Returns { displayContent, inFence }:
@@ -64,7 +89,7 @@ async function buildDisplayContent(rawDelta, opts) {
   const proseIdx = [];
   const proseLines = [];
   for (let i = 0; i < plan.length; i++) {
-    if (plan[i].kind === 'prose') { proseIdx.push(i); proseLines.push(plan[i].line); }
+    if (plan[i].kind === 'prose') { proseIdx.push(i); proseLines.push(plan[i].content); }
   }
   if (proseLines.length === 0) return { displayContent: null, inFence }; // nothing to translate
 
@@ -79,7 +104,7 @@ async function buildDisplayContent(rawDelta, opts) {
     const p = plan[i];
     if (p.kind === 'prose') {
       const t = zhFor[i];
-      if (t && t.trim() && t.trim() !== p.line.trim()) out.push(pair(p.line, t, marker, hardBreak));
+      if (t && t.trim() && t.trim() !== p.content.trim()) out.push(pair(p, t, marker, hardBreak));
       else out.push(p.line);
     } else {
       out.push(p.line);
