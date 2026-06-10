@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are also published on
 [GitHub Releases](https://github.com/roy-jiang-opus/cctrans/releases).
 
+## [Unreleased]
+
+### Changed
+
+- **Setup is now a back/forward wizard.** `cctrans setup` (and the prompts
+  during `cctrans install`) let you step back with `←` to change an earlier
+  answer (choices preserved) and end on a review screen where you can jump to
+  edit any setting before saving — replacing the one-shot prompt sequence.
+  Still zero npm dependencies; non-interactive use (flags / `--yes` / piped) is
+  unchanged.
+
 ## [0.5.0] - 2026-06-10
 
 ### Added
@@ -39,12 +50,10 @@ Release notes are also published on
   language/mode/display/backend (or disables the overlay) for that project only.
 - **`cctrans cache [clear|gc]`** — cache size/clear, plus a 200 MB size cap
   (`cacheMaxMB`) enforced daily from CLI commands.
-- **Interactive setup wizard.** `cctrans setup` (and the prompts during
-  `cctrans install`) are now a back/forward ↑/↓ wizard: pick each setting by
-  selecting (not typing), `←` to go back and change an earlier answer, and a
-  final review screen where you can jump to edit any setting before saving.
-  Still zero npm dependencies; non-interactive use (flags / `--yes` / piped) is
-  unchanged.
+- **Arrow-key setup.** `cctrans setup` (and the prompts during `cctrans install`)
+  are now an interactive ↑/↓ menu — pick your language, display mode, and backend
+  by selecting, not typing. Still zero npm dependencies; non-interactive use
+  (flags / `--yes` / piped) is unchanged.
 - `cctrans status` shows the Claude Code version, node version, and any active
   project override; `cctrans install` warns when Claude Code is missing or too
   old for the MessageDisplay hook.
