@@ -7,14 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are also published on
 [GitHub Releases](https://github.com/roy-jiang-opus/cctrans/releases).
 
-## [Unreleased]
+## [0.5.0] - 2026-06-10
 
 ### Added
-
-- **Arrow-key setup.** `cctrans setup` (and the prompts during `cctrans install`)
-  are now an interactive ↑/↓ menu — pick your language, display mode, and backend
-  by selecting, not typing. Still zero npm dependencies; non-interactive use
-  (flags / `--yes` / piped) is unchanged.
 
 - **Translated question dialogs.** Claude Code's interactive question dialog
   (AskUserQuestion) is now shown in your language — the question, option labels,
@@ -24,23 +19,13 @@ Release notes are also published on
   language. `cctrans dialog on|off` (on by default). **Run `cctrans install`
   after upgrading to register the new dialog hooks.** The answer-restore needs
   Claude Code >= 2.1.121; `cctrans doctor` warns on older versions.
-
 - **Replace display mode** (`cctrans display replace`, default `append`): show only
   the translation in place of the English, instead of under it. Takes effect in
   line mode (section/message stream the English first by design). The transcript
   and model context stay English; an untranslated/identity line keeps its original
   text. Per-project overridable; setup wizard asks in line mode.
-
-### Fixed
-
-- **Markdown tables are no longer split/broken by the overlay.** A table's
-  header, `|---|` delimiter, and rows now pass through as a unit (previously a
-  translated line was spliced between the header and delimiter, destroying the
-  table). A translated copy of the table is appended after it. Works in line,
-  section, and message modes; table state threads across streaming deltas.
-
-### Added
-
+- **`cctrans mode message`** — whole reply streams in plain English, one grouped
+  translation arrives at the end (alongside the existing `line` and `section`).
 - **4 Latin-script target languages**: Spanish (`es`), Portuguese (`pt`), French
   (`fr`), German (`de`) — already-target detection via a conservative stopword
   heuristic instead of Unicode ranges.
@@ -50,17 +35,32 @@ Release notes are also published on
   and the last hook error (hooks now record `~/.cc-translate/last-error.json`).
 - **`cctrans stats`** — lines translated and estimated main-loop tokens saved
   (per-language token-cost ratios), with a bounded JSONL usage journal.
-- **`cctrans mode message`** — whole reply streams in plain English, one grouped
-  translation arrives at the end.
 - **Per-project overrides** — a `.cc-translate.json` at a repo root overrides
-  language/mode/backend (or disables the overlay) for that project only.
+  language/mode/display/backend (or disables the overlay) for that project only.
 - **`cctrans cache [clear|gc]`** — cache size/clear, plus a 200 MB size cap
   (`cacheMaxMB`) enforced daily from CLI commands.
+- **Arrow-key setup.** `cctrans setup` (and the prompts during `cctrans install`)
+  are now an interactive ↑/↓ menu — pick your language, display mode, and backend
+  by selecting, not typing. Still zero npm dependencies; non-interactive use
+  (flags / `--yes` / piped) is unchanged.
 - `cctrans status` shows the Claude Code version, node version, and any active
   project override; `cctrans install` warns when Claude Code is missing or too
   old for the MessageDisplay hook.
 - CI now runs the test suite on every push/PR across Node 18/20/22/24; issue
   templates, CONTRIBUTING.md, and SECURITY.md added.
+
+### Fixed
+
+- **Markdown tables are no longer split/broken by the overlay.** A table's
+  header, `|---|` delimiter, and rows now pass through as a unit (previously a
+  translated line was spliced between the header and delimiter, destroying the
+  table). A translated copy of the table is appended after it. Works in line,
+  section, and message modes; table state threads across streaming deltas.
+- **The end of a long reply is no longer left untranslated.** The on-screen
+  string holds both the English and its translation (~2× the text), so a long
+  final paragraph overflowed the old conservative size cap and reverted to
+  English. The cap is raised to 16000 (Claude Code renders far more), so long
+  blocks translate again.
 
 ### Changed
 
@@ -175,6 +175,7 @@ Release notes are also published on
 
 <!-- 0.1.0 and 0.2.0 predate tagging; their links use commit SHAs. -->
 
+[0.5.0]: https://github.com/roy-jiang-opus/cctrans/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/roy-jiang-opus/cctrans/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/roy-jiang-opus/cctrans/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/roy-jiang-opus/cctrans/compare/v0.3.0...v0.4.0
