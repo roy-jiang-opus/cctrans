@@ -17,7 +17,12 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / >9000 chars → emit nothing → original English.
 
 ## Files
-- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/backend/backends/setup/key/input/install/uninstall/last/test
+- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/backend/backends/setup/key/input/
+  install/uninstall/last/test/doctor/stats/cache/--version. `doctor` is the counterpart to the
+  fail-safe design (failures are silent → doctor explains them: hook registration incl. stale
+  paths, CC version >= 2.1.152, live backend probes bypassing the cache, last-error.json).
+  Cache GC (size cap, state `cacheMaxMB`) runs ONLY from CLI commands (on/off daily stamp,
+  `cache gc`) — never from the hook (directory sweeps must not eat the 9s delta budget).
 - `hook/message-display.js` — output overlay hook (stdin → displayContent); CCTRANS_DISABLE recursion guard.
   Per-message state in `~/.cc-translate/msgstate/<message_id>.json` ({v, mode, index, inFence, buf},
   atomic tmp+rename, reset at index 0 = new message OR full repaint, unlinked on final, 24h GC):
@@ -42,12 +47,24 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   quote runs keep `> `). Translation stays per-LINE, so both modes share the sha1 cache
   and backend prompts are untouched. The trailing `''` from split('\n') is the delta's
   trailing-\n encoding, NOT a blank line (all non-final deltas end with \n; final never does).
-- `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + internal en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, script regexes
+- `src/langs.js` — language registry (zh-Hans/zh-Hant/ja/ko/ru/hi + Latin es/pt/fr/de + internal
+  en; aliases zh-CN→zh-Hans, zh-TW→zh-Hant): names, per-backend codes, token-cost `ratio` (used
+  by stats), and already-target detection — `script` regex ratio for non-Latin, conservative
+  stopword counting for Latin (>= 3 words, >= 2 target-stopword hits AND more than EN_STOP hits;
+  false positive = silently untranslated line = expensive; false negative = re-translate, the
+  identity check suppresses the echo = cheap)
+- `src/stats.js` — usage journal (~/.cc-translate/stats.jsonl, O_APPEND = concurrency-safe),
+  recorded by every translateLines call incl. pure cache hits; aggregation + saved-tokens
+  estimate (chars/4 × (ratio−1)); compaction folds months past 2MB. `cctrans stats` reads it.
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600), the ONLY key source — env vars are never read. Must NOT require config.js (config requires keys for the default backend).
 - `src/setup.js` — interactive wizard (lang → backend → key entry → input translation y/N → live verify); flags --lang --backend --key --input --yes
-- `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`
+- `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`.
+  `getState(cwd)` overlays a `.cc-translate.json` found by walking UP from cwd (hooks pass
+  stdin cwd, CLI passes process.cwd()): whitelist-only overrides incl. `enabled` (per-repo
+  kill switch), invalid mode ignored, broken file → global state. setState writes global only —
+  project values must never leak into state.json (test/project.js locks this in).
 - `src/transcript.js` — find + parse session JSONL (used by `cctrans last`)
 
 ## Constraints (verified, don't relitigate)
@@ -83,12 +100,17 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
      routine README-language syncs). Don't use bare `--generate-notes` — commits
      go straight to main, so without PRs it produces only the changelog link.
   3. `gh release create vX.Y.Z --notes-file <notes.md>` — this triggers the publish.
+  4. Move the CHANGELOG.md `Unreleased` section under the new `## [X.Y.Z] - date`
+     heading (add the compare link at the bottom) in the same release commit.
 - Don't `npm publish` from a local shell in CI/scripts — tokens are disallowed; local
   interactive publish with 2FA still works but the workflow is the normal path.
 - GitHub's sidebar "Packages" section can't list npmjs packages (GitHub Packages
   registry only) — the npm link lives in the repo About homepage + README badges.
 
 ## Testing
+- `npm test` — 7 offline deterministic suites (fence, markdown, section, latin, message,
+  project, stats): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1 cache, so NO network.
+  CI runs them on push/PR (node 18/20/22/24) and before npm publish.
 - `node bin/cctrans.js test "<text>"` — engine only.
 - Live TUI: register the hook in a throwaway dir's `.claude/settings.json`, drive
   `claude --dangerously-skip-permissions` inside tmux, `capture-pane -p`. See

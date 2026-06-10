@@ -14,14 +14,26 @@
   },
   "keywords": [
     "claude-code",
+    "claude",
+    "anthropic",
+    "cli",
     "translation",
+    "translate",
     "bilingual",
     "i18n",
+    "l10n",
     "terminal",
     "hook",
+    "overlay",
     "chinese",
     "japanese",
-    "korean"
+    "korean",
+    "russian",
+    "hindi",
+    "spanish",
+    "portuguese",
+    "french",
+    "german"
   ],
   "bin": {
     "cctrans": "bin/cctrans.js"
@@ -39,6 +51,6 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/fence.js && node test/markdown.js && node test/section.js"
+    "test": "node test/fence.js && node test/markdown.js && node test/section.js && node test/latin.js && node test/message.js && node test/project.js && node test/stats.js"
   }
 }

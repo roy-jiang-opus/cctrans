@@ -147,7 +147,11 @@ const SECTION_HARD_CAP = 9000; // flush even mid-list past this
 // the resulting buffer BEFORE translation starts (at-most-once flush: a crash
 // or timeout after the save can only drop a section's translation, never
 // replay it at a wrong position).
-// opts: {inFence, buf (pending entries from prior deltas), target, final}
+// opts: {inFence, buf (pending entries from prior deltas), target, final,
+//        granularity: 'section' (default) | 'message'}
+// 'message' suppresses every text boundary except the size caps: the whole
+// reply's translation arrives as one grouped block at final:true. Code/target
+// lines still pass through untranslated — they just don't close the buffer.
 // Returns:
 //   out      — the delta's own lines, verbatim (splice skeleton)
 //   flushes  — [{pos, entries}]: closed sections and where in `out` their ZH
@@ -156,6 +160,7 @@ const SECTION_HARD_CAP = 9000; // flush even mid-list past this
 //   inFence  — fence state at end of delta, to persist
 function planSections(rawDelta, opts) {
   opts = opts || {};
+  const wholeMessage = opts.granularity === 'message';
   const lines = String(rawDelta).split('\n');
   const { plan, inFence } = classify(lines, opts.inFence, opts.target || 'zh-Hans');
   const out = [];
@@ -168,21 +173,21 @@ function planSections(rawDelta, opts) {
   for (let i = 0; i < plan.length; i++) {
     const p = plan[i];
     if (p.kind === 'prose') {
-      if (p.block === 'heading') flush(); // close the run before the heading
+      if (p.block === 'heading' && !wholeMessage) flush(); // close the run before the heading
       out.push(p.line);
       pending.push({ line: p.line, prefix: p.prefix, content: p.content, block: p.block });
       pendingChars += p.content.length;
-      if (p.block === 'heading') flush(); // ...and the heading itself
+      if (p.block === 'heading' && !wholeMessage) flush(); // ...and the heading itself
       else if (pendingChars > SECTION_CAP && (p.block !== 'list' || pendingChars > SECTION_HARD_CAP)) flush();
       continue;
     }
     if (p.kind === 'blank') {
       const terminalArtifact = i === plan.length - 1 && p.line === '';
-      if (!terminalArtifact) flush();
+      if (!terminalArtifact && !wholeMessage) flush();
       out.push(p.line);
       continue;
     }
-    flush(); // code/fence/target line interrupts the section, then passes through
+    if (!wholeMessage) flush(); // code/fence/target line interrupts the section
     out.push(p.line);
   }
   if (opts.final) flush();

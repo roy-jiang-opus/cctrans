@@ -16,9 +16,29 @@ const STATE_FILE = path.join(BASE, 'state.json');
 const CACHE_DIR = path.join(BASE, 'cache');
 const MSGSTATE_DIR = path.join(BASE, 'msgstate');
 
-// Display layouts. Validate against this list everywhere (CLI, setup, hook) so
-// a future granularity (e.g. 'message') is a one-line addition.
-const MODES = ['line', 'section'];
+// Display layouts. Validate against this list everywhere (CLI, setup, hook).
+const MODES = ['line', 'section', 'message'];
+
+// Per-project overrides: a .cc-translate.json next to (or above) the working
+// directory overrides these fields of the global state for that project.
+// Secrets are NOT overridable (keys live only in keys.json) — and neither is
+// azureEndpoint: a repo-controlled endpoint that receives the Azure key would
+// be an exfiltration vector, so endpoint config stays global-only.
+const PROJECT_FILE = '.cc-translate.json';
+const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'inputEn', 'inputMinChars'];
+
+// Walk up from cwd looking for a project file (stops at the filesystem root).
+function findProjectFile(cwd) {
+  let dir = path.resolve(String(cwd));
+  for (let i = 0; i < 64; i++) {
+    const f = path.join(dir, PROJECT_FILE);
+    try { if (fs.statSync(f).isFile()) return f; } catch (e) {}
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+  return null;
+}
 
 // Remove per-message state files older than maxAgeMs (0 = all). Sessions
 // killed mid-message leave their file behind; swept here and on index-0 saves.
@@ -46,16 +66,36 @@ function defaults() {
     anthropicModel: 'claude-haiku-4-5', // anthropic backend model
     azureEndpoint: 'https://api.cognitive.microsofttranslator.com',
     marker: '↳ ', // prefix on each translated line
-    mode: 'line', // display layout: 'line' (ZH under each line) or 'section' (grouped per block)
+    mode: 'line', // display layout, one of MODES: line / section / message
     inputEn: false, // input translation (beta, prompt -> English) off until enabled
     inputMinChars: 4, // non-Latin chars in a prompt that trigger input translation
+    cacheMaxMB: 200, // translation-cache size cap, enforced by the periodic GC
   };
 }
 
-function getState() {
+// Effective state = defaults <- global state.json <- project .cc-translate.json
+// (when a cwd is given; hooks pass the cwd from their stdin payload, the CLI
+// passes process.cwd() where project context matters). When a project file is
+// active, its path is exposed as state.projectFile so status/doctor can say so.
+function getState(cwd) {
   let s = {};
   try { s = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch (e) {}
-  return Object.assign(defaults(), s);
+  const merged = Object.assign(defaults(), s);
+  if (cwd) {
+    const file = findProjectFile(cwd);
+    if (file) {
+      try {
+        const proj = JSON.parse(fs.readFileSync(file, 'utf8'));
+        for (const k of PROJECT_OVERRIDABLE) {
+          if (proj[k] === undefined) continue;
+          if (k === 'mode' && !MODES.includes(proj[k])) continue; // ignore invalid
+          merged[k] = proj[k];
+        }
+        merged.projectFile = file;
+      } catch (e) {} // unreadable project file -> global state, fail-safe
+    }
+  }
+  return merged;
 }
 
 function setState(patch) {
@@ -73,6 +113,7 @@ function setState(patch) {
     mode: next.mode,
     inputEn: next.inputEn,
     inputMinChars: next.inputMinChars,
+    cacheMaxMB: next.cacheMaxMB,
   };
   const tmp = STATE_FILE + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(persist, null, 2));
@@ -80,4 +121,4 @@ function setState(patch) {
   return next;
 }
 
-module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, MODES, ensureDirs, getState, setState, defaults, sweepMsgState };
+module.exports = { HOME, BASE, STATE_FILE, CACHE_DIR, MSGSTATE_DIR, MODES, PROJECT_FILE, ensureDirs, getState, setState, defaults, sweepMsgState, findProjectFile };

@@ -22,10 +22,26 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getState, MSGSTATE_DIR, sweepMsgState } = require('../src/config');
+const { getState, BASE, MSGSTATE_DIR, sweepMsgState } = require('../src/config');
 const { buildDisplayContent, planSections, renderSections } = require('../src/interleave');
 
 function showOriginal() { process.exit(0); } // no stdout => CC keeps the original delta
+
+// Failures here are silent BY DESIGN (the screen just shows English), so the
+// last one is preserved for `cctrans doctor` to surface. Fail-safe itself;
+// atomic tmp+rename so concurrent erroring hooks can't tear the JSON.
+function noteError(stage, e) {
+  try {
+    fs.mkdirSync(BASE, { recursive: true });
+    const f = path.join(BASE, 'last-error.json');
+    const tmp = f + '.' + process.pid + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify({
+      ts: new Date().toISOString(), hook: 'message-display', stage: stage,
+      error: String((e && e.stack) || e || '').slice(0, 2000),
+    }));
+    fs.renameSync(tmp, f);
+  } catch (err) {}
+}
 
 // Per-message state, so "inside a ``` block?" and the open section's buffered
 // lines carry across the deltas of one message (fresh process per delta).
@@ -83,24 +99,27 @@ process.stdin.on('end', async () => {
   if (process.env.CCTRANS_DISABLE) return showOriginal();
 
   let st;
-  try { st = getState(); } catch (e) { return showOriginal(); }
+  try { st = getState(inp.cwd); } catch (e) { noteError('getState', e); return showOriginal(); }
   if (!st.enabled) return showOriginal();
 
   const id = inp.message_id;
   const index = typeof inp.index === 'number' ? inp.index : 0;
   const final = inp.final === true;
 
-  if (st.mode === 'section') {
-    const ms = loadMsgState(id, index, 'section');
+  if (st.mode === 'section' || st.mode === 'message') {
+    const ms = loadMsgState(id, index, st.mode);
     // An empty delta still flushes when it is the final one and lines are buffered.
     if (!delta && !(final && ms.buf.length)) return showOriginal();
-    const guard = setTimeout(showOriginal, 9000);
+    const guard = setTimeout(() => { noteError('guard-timeout', st.mode + ' boundary translation exceeded 9s'); showOriginal(); }, 9000);
     try {
-      const planned = planSections(delta, { inFence: ms.inFence, buf: ms.buf, target: st.target, final: final });
+      const planned = planSections(delta, {
+        inFence: ms.inFence, buf: ms.buf, target: st.target, final: final,
+        granularity: st.mode === 'message' ? 'message' : 'section',
+      });
       // Commit state BEFORE translating (flushed sections already pruned from
       // buf): a crash/timeout past this point can only drop a section's
       // translation, never replay it at a wrong position.
-      saveMsgState(id, index, 'section', planned.inFence, planned.buf, final);
+      saveMsgState(id, index, st.mode, planned.inFence, planned.buf, final);
       if (!planned.flushes.length) { clearTimeout(guard); return showOriginal(); }
       const displayContent = await renderSections(planned, {
         target: st.target, backend: st.backend, model: st.model, marker: st.marker,
@@ -111,6 +130,7 @@ process.stdin.on('end', async () => {
       emit(displayContent);
     } catch (e) {
       clearTimeout(guard);
+      noteError(st.mode, e);
       return showOriginal();
     }
     return;
@@ -121,7 +141,7 @@ process.stdin.on('end', async () => {
   const ms = loadMsgState(id, index, 'line');
 
   // Guard below Claude Code's 10s MessageDisplay timeout so we always exit clean.
-  const guard = setTimeout(showOriginal, 9000);
+  const guard = setTimeout(() => { noteError('guard-timeout', 'line translation exceeded 9s'); showOriginal(); }, 9000);
   try {
     const { displayContent, inFence } = await buildDisplayContent(delta, {
       target: st.target, backend: st.backend, model: st.model,
@@ -133,6 +153,7 @@ process.stdin.on('end', async () => {
     emit(displayContent);
   } catch (e) {
     clearTimeout(guard);
+    noteError('line', e);
     return showOriginal();
   }
 });

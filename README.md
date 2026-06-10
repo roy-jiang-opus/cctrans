@@ -23,19 +23,21 @@
   ↳ 这涉及 3 个文件并添加重试层。
 ```
 
-A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese / Korean / Russian / Hindi) under each English line, **right in the conversation** — display-only, so the transcript, the model's context, and your token bill stay 100% English.
+A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese / Korean / Russian / Hindi / Spanish / Portuguese / French / German) under each English line, **right in the conversation** — display-only, so the transcript, the model's context, and your token bill stay 100% English.
 
 ## ✨ Features
 
 - 🪞 **Inline bilingual display** — the translation appears under each English line, in the conversation itself, streaming along with the reply
-- 🧩 **Two layouts** — per-line interleave, or `cctrans mode section`: whole English block first, then its grouped translation
+- 🧩 **Three layouts** — per-line interleave, per-block (`cctrans mode section`), or whole-reply (`cctrans mode message`)
 - 🧾 **Non-destructive** — transcript and model context stay pure English; skills, docs, and code are untouched
 - 🆓 **Zero main-loop tokens** — translation runs through a separate cheap backend (or a free one), completely outside your Claude Code session
 - ⌨️ **Input translation (beta)** — type prompts in your language; the model works — and replies — in English (`cctrans input on`)
-- 🌏 **6 target languages** — `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
+- 🌏 **10 target languages** — `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de`
 - 🔌 **6 backends with auto-fallback** — OpenAI / Anthropic / DeepL / Azure / free Google / your own Claude subscription
+- 📁 **Per-project overrides** — a `.cc-translate.json` in a repo switches language/mode (or disables) just for that project
 - 🔒 **Key isolation** — API keys live only in a chmod-600 file; shell env vars are never read
 - 🛟 **Fail-safe** — any error or timeout falls back to plain English; it never blocks your session
+- 🩺 **Built-in diagnostics** — `cctrans doctor` explains why nothing is translating; `cctrans stats` shows the tokens you saved
 
 ## 🚀 Quick start
 
@@ -101,10 +103,13 @@ Claude streams English
 |---------|--------------|
 | `cctrans on` / `cctrans off` / `cctrans toggle` | turn translation on / off / toggle |
 | `cctrans status` | show state (toggle, hook, backend, language) |
-| `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
-| `cctrans mode [line\|section]` | layout: translation under each line, or grouped per block |
+| `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
+| `cctrans mode [line\|section\|message]` | layout: per line, per block, or whole reply |
 | `cctrans backend <id>` | switch translation engine |
 | `cctrans backends` | list engines and their availability |
+| `cctrans doctor` | diagnose: hooks, Claude Code version, backends, keys, last hook error |
+| `cctrans stats` | lines translated + estimated main-loop tokens saved |
+| `cctrans cache [clear\|gc]` | translation-cache size / clear / enforce the size cap |
 | `cctrans setup` | interactive wizard: language, display mode, backend, API keys |
 | `cctrans key [id] [value]` | manage API keys in `~/.cc-translate/keys.json` |
 | `cctrans input on` / `cctrans input off` | **(beta)** translate non-English input to English (sent as context) |
@@ -115,7 +120,7 @@ Claude streams English
 
 ## 🧩 Display modes
 
-`line` (default) interleaves: a translated line under each English line, streaming with the reply. `section` keeps English exactly as Claude streams it and splices in **one grouped translation when a block completes** — much quieter for list-heavy replies:
+`line` (default) interleaves: a translated line under each English line, streaming with the reply. `section` keeps English exactly as Claude streams it and splices in **one grouped translation when a block completes** — much quieter for list-heavy replies. `message` goes further: the whole reply streams in plain English and **one grouped translation arrives at the very end**:
 
 ```
 Use these flags:
@@ -130,10 +135,10 @@ Use these flags:
 ```
 
 ```bash
-cctrans mode section   # switch back anytime: cctrans mode line
+cctrans mode section   # per block · cctrans mode message — whole reply · cctrans mode line — back to default
 ```
 
-> In section mode a block's translation appears **when the block completes**, not while it streams — with a slow backend (e.g. `claude-code`, 3–6 s/call) that pause is noticeable, so API backends feel best here. If a block's translation fails, the English is unaffected and that block simply stays untranslated.
+> In section/message mode a translation appears **when its block (or the reply) completes**, not while it streams — with a slow backend (e.g. `claude-code`, 3–6 s/call) that pause is noticeable, so API backends feel best here. If a block's translation fails, the English is unaffected and that block simply stays untranslated.
 
 ## 🌐 Translation backends
 
@@ -154,18 +159,42 @@ All other settings (backend, language, marker, models, Azure endpoint) live in `
 
 ## 🗣 Languages
 
-Target languages cover **CJK + Russian + Hindi** (non-Latin scripts, so "this line is already in the target language" can be detected for free via Unicode ranges and skipped):
-
 ```bash
-cctrans lang ja       # Japanese
-cctrans lang ko       # Korean
-cctrans lang ru       # Russian
-cctrans lang hi       # Hindi
-cctrans lang zh-Hant  # Traditional Chinese
-cctrans lang zh-Hans  # Simplified Chinese (default)
+cctrans lang zh-Hans  # Simplified Chinese (default)    cctrans lang zh-Hant  # Traditional Chinese
+cctrans lang ja       # Japanese                        cctrans lang ko       # Korean
+cctrans lang ru       # Russian                         cctrans lang hi       # Hindi
+cctrans lang es       # Spanish                         cctrans lang pt       # Portuguese
+cctrans lang fr       # French                          cctrans lang de       # German
 ```
 
+For **CJK + Russian + Hindi** (non-Latin scripts), "this line is already in the target language" is detected for free via Unicode ranges and skipped. For **Spanish / Portuguese / French / German** (Latin scripts), detection uses a conservative stopword heuristic instead — and if an already-target line does get re-translated, the identity check suppresses the echo, so worst case is a wasted backend call, never a wrong line. Note the token savings are smaller for Latin-script languages (~1.1–1.2× vs English, against 1.5–3× for non-Latin — see [MOTIVATION.md](MOTIVATION.md)); for them the draw is the bilingual display itself.
+
 Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chinese is a script, not a region; `zh-CN` / `zh-TW` are accepted as aliases and normalized. Switching takes effect immediately (the hook re-reads state on every call); each language has its own cache.
+
+## 📁 Per-project overrides
+
+Drop a `.cc-translate.json` at a repo's root (any parent of the working directory works) to override the global settings just for that project:
+
+```json
+{ "target": "ja", "mode": "section" }
+```
+
+or turn the overlay off for a specific project with `{ "enabled": false }`. Overridable fields: `enabled`, `target`, `mode`, `backend`, `marker`, `model`, `inputEn`, `inputMinChars`. Secrets are not overridable — keys stay in `~/.cc-translate/keys.json`, and endpoint settings are global-only by design. `cctrans status` (run inside the project) and `cctrans doctor` both show when a project override is active. Treat a cloned repo's `.cc-translate.json` as part of its code: it can, for example, switch the backend (including `claude-code`, which spends your subscription) for work done in that repo.
+
+## 🩺 Troubleshooting
+
+The overlay is fail-safe by design: every error degrades to plain English rather than blocking your session — which also means failures are **silent**. When nothing is being translated:
+
+```bash
+cctrans doctor
+```
+
+checks the hook registration (including stale paths from old installs), your Claude Code version (MessageDisplay needs ≥ 2.1.152), the configured backend and its key, live connectivity (with latency), and the **last hook error** (hooks record it to `~/.cc-translate/last-error.json` when something fails mid-stream). And to see what the overlay has been doing for you:
+
+```bash
+cctrans stats    # lines translated + estimated main-loop tokens saved
+cctrans cache    # translation-cache size; clear / gc to manage it (200 MB cap by default)
+```
 
 ## ⌨️ Input translation (beta)
 
@@ -177,8 +206,8 @@ Chinese uses BCP-47 **script** codes (`zh-Hans`/`zh-Hant`) — Traditional Chine
 
 - The hook fires **per chunk during streaming**; each chunk is translated and replaced in place — translations appear progressively alongside the English.
 - The hook has a **10-second** timeout; this tool guards at 9s internally. Any error / timeout / oversized chunk (>9,000 chars) **falls back safely to the original English** — it never stalls the session.
-- Every translated line is **cached** by content hash (`~/.cc-translate/cache`); repaints and repeated text cost nothing. Both modes share the cache.
-- In section mode an in-flight block's text is buffered in `~/.cc-translate/msgstate` (same at-rest exposure as the cache); the file is removed when the message completes and stale ones are swept after 24h.
+- Every translated line is **cached** by content hash (`~/.cc-translate/cache`, 200 MB cap enforced daily); repaints and repeated text cost nothing. All modes share the cache.
+- In section/message mode an in-flight block's text is buffered in `~/.cc-translate/msgstate` (same at-rest exposure as the cache); the file is removed when the message completes and stale ones are swept after 24h.
 - With `openai`, each chunk is roughly one API call (~$0.0001) and adds about 1s of latency vs. plain English; `google` is faster with slightly lower quality.
 
 ## 🔗 Stay in the loop

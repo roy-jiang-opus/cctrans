@@ -14,11 +14,25 @@
 // Safety contract: on disabled / English input / error / timeout, emit
 // NOTHING and exit 0 — the prompt goes through untouched.
 
-const { getState } = require('../src/config');
+const { getState, BASE } = require('../src/config');
 const { translateLines } = require('../src/translate');
 const { nonLatinCount } = require('../src/langs');
 
 function passThrough() { process.exit(0); }
+
+function noteError(stage, e) {
+  try {
+    const fs = require('fs');
+    const f = require('path').join(BASE, 'last-error.json');
+    fs.mkdirSync(BASE, { recursive: true });
+    const tmp = f + '.' + process.pid + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify({
+      ts: new Date().toISOString(), hook: 'user-prompt-submit', stage: stage,
+      error: String((e && e.stack) || e || '').slice(0, 2000),
+    }));
+    fs.renameSync(tmp, f);
+  } catch (err) {}
+}
 
 let data = '';
 process.stdin.on('data', (d) => (data += d));
@@ -34,7 +48,7 @@ process.stdin.on('end', async () => {
   if (!prompt.trim() || prompt.length > 6000) return passThrough();
 
   let st;
-  try { st = getState(); } catch (e) { return passThrough(); }
+  try { st = getState(inp.cwd); } catch (e) { noteError('getState', e); return passThrough(); }
   if (!st.inputEn) return passThrough();
 
   // Trigger on an absolute count of non-Latin chars (configurable:
@@ -62,6 +76,7 @@ process.stdin.on('end', async () => {
     process.exit(0);
   } catch (e) {
     clearTimeout(guard);
+    noteError('translate', e);
     return passThrough();
   }
 });

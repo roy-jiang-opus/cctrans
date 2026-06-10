@@ -2,8 +2,37 @@
 // Verifies block markdown (headings, list items, blockquotes) is stripped
 // before translation and re-applied to the translated line — so the renderer
 // never shows a literal "##" / "-" / ">" after the ↳ marker.
+//
+// Deterministic: CCTRANS_HOME points at a temp dir and every prose line is
+// pre-seeded into the sha1 cache, so translateLines never touches the network.
+// The block prefix is split off BEFORE translation (splitBlockPrefix), so the
+// cache is keyed on the content AFTER the prefix.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'cctrans-markdown-'));
+process.env.CCTRANS_HOME = TMP;
+
 const assert = require('assert');
 const { buildDisplayContent } = require('../src/interleave');
+const { cacheKey } = require('../src/translate');
+const { CACHE_DIR } = require('../src/config');
+
+// Seeded values must DIFFER from the source content — an identical
+// "translation" is treated as a backend echo and the translated line is
+// suppressed.
+const ZH = {
+  'Fact / Inference': '事实 / 推断',
+  'Fix the login bug': '修复登录缺陷',
+  'Add retry logic': '添加重试逻辑',
+  'The cache is content-addressed.': '缓存按内容寻址。',
+  'This explains the command.': '这是对该命令的解释。',
+};
+fs.mkdirSync(CACHE_DIR, { recursive: true });
+for (const [en, zh] of Object.entries(ZH)) {
+  fs.writeFileSync(path.join(CACHE_DIR, cacheKey(en, 'zh-Hans', 'google') + '.txt'), zh);
+}
 
 async function lines(delta) {
   const r = await buildDisplayContent(delta, { backend: 'google', inFence: false });

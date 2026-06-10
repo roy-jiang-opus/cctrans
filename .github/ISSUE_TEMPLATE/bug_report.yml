@@ -1,0 +1,89 @@
+name: Bug report
+description: Something broke — the overlay didn't render, rendered wrong, or cctrans misbehaved.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! A quick note before you start: if a hook fails, cctrans
+        is designed to silently fall back to plain English — so "no translation appears"
+        is usually a config/key/backend issue, and `cctrans doctor` diagnoses exactly
+        which (hook registration, Claude Code version, backend connectivity, and the
+        last recorded hook error).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Describe the bug and the behavior you expected instead. Steps to reproduce help a lot.
+      placeholder: |
+        e.g. "Headings render with a literal ## after the ↳ marker. Expected the
+        translated line to be a heading too. Happens every time the model outputs ##."
+    validations:
+      required: true
+
+  - type: textarea
+    id: cctrans-status
+    attributes:
+      label: Output of `cctrans status`
+      description: |
+        Paste the full output — the header includes the cctrans version, and the rest
+        covers enabled/hook/backend/lang/mode. It never prints API keys (only a count),
+        so it is safe to paste as-is.
+      render: text
+      placeholder: |
+        cctrans status  v0.4.2
+          enabled : ON
+          hook    : installed
+          backend : google  (ready)
+          ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: cctrans-doctor
+    attributes:
+      label: Output of `cctrans doctor`
+      description: |
+        Doctor checks hook registration, your Claude Code version, backend
+        connectivity, and the last recorded hook error. Like status, it never
+        prints API keys.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: claude-version
+    attributes:
+      label: Output of `claude --version`
+      description: The Claude Code version you saw the bug on (hook behavior can differ between versions).
+      placeholder: "2.1.170 (Claude Code)"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend in use
+      description: The translation backend you were using when the bug occurred (`cctrans backends` shows the active one).
+      options:
+        - google
+        - openai
+        - anthropic
+        - deepl
+        - azure
+        - claude-code
+        - not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else from the terminal
+      description: |
+        Any other relevant output — e.g. `cctrans last`, `node bin/cctrans.js test "<text>"`,
+        a `tmux capture-pane -p` snippet, or error text. Screenshots welcome too.
+      render: text
+    validations:
+      required: false

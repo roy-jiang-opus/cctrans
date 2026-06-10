@@ -23,19 +23,21 @@
   ↳ 這會影響 3 個檔案並加入重試層。
 ```
 
-為 Claude Code 加上一層**雙語對照**:每行英文下方一行譯文(中/日/韓/俄/印地),**就在對話裡**——僅作顯示,轉錄、模型上下文和你的 token 帳單 100% 保持英文。
+為 Claude Code 加上一層**雙語對照**:每行英文下方一行譯文(中/日/韓/俄/印地/西/葡/法/德),**就在對話裡**——僅作顯示,轉錄、模型上下文和你的 token 帳單 100% 保持英文。
 
 ## ✨ 特性
 
 - 🪞 **行內雙語顯示** —— 譯文隨回覆串流出現在每行英文下方,就在對話裡
-- 🧩 **兩種排版** —— 逐行對照,或 `cctrans mode section`:整塊英文先出,再跟一段成組譯文
+- 🧩 **三種排版** —— 逐行對照、按區塊成組(`cctrans mode section`),或整則回覆成組(`cctrans mode message`)
 - 🧾 **非破壞性** —— 轉錄與模型上下文保持純英文;skills、文件、程式碼不受影響
 - 🆓 **主對話零 token** —— 翻譯走獨立低成本後端(也有免費選項),完全在 Claude Code 工作階段之外
 - ⌨️ **輸入翻譯(beta)** —— 用母語打字,模型按英文工作、按英文回覆(`cctrans input on`)
-- 🌏 **6 種目標語言** —— `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi`
+- 🌏 **10 種目標語言** —— `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de`
 - 🔌 **6 個後端自動降級** —— OpenAI / Anthropic / DeepL / Azure / 免費 Google / 你自己的 Claude 訂閱
+- 📁 **專案層級覆寫** —— 在儲存庫裡放一個 `.cc-translate.json`,只為該專案切換語言/模式(或直接關閉)
 - 🔒 **金鑰隔離** —— API key 只存在 chmod-600 的檔案裡,從不讀終端機環境變數
 - 🛟 **故障安全** —— 任何錯誤或逾時都回退為純英文,絕不卡住工作階段
+- 🩺 **內建診斷** —— `cctrans doctor` 解釋為什麼沒在翻譯;`cctrans stats` 顯示你省下的 token
 
 ## 🚀 快速開始
 
@@ -101,10 +103,13 @@ Claude 串流輸出英文
 |------|------|
 | `cctrans on` / `cctrans off` / `cctrans toggle` | 開 / 關 / 切換翻譯 |
 | `cctrans status` | 檢視狀態(開關、鉤子、後端、語言) |
-| `cctrans lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` |
-| `cctrans mode [line\|section]` | 排版:譯文跟在每行下方,或按區塊成組 |
+| `cctrans lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
+| `cctrans mode [line\|section\|message]` | 排版:逐行、按區塊,或整則回覆 |
 | `cctrans backend <id>` | 切換翻譯引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
+| `cctrans doctor` | 診斷:鉤子、Claude Code 版本、後端、金鑰、最近一次鉤子錯誤 |
+| `cctrans stats` | 已翻譯行數 + 估算省下的主對話 token |
+| `cctrans cache [clear\|gc]` | 翻譯快取:大小 / 清空 / 按上限清理 |
 | `cctrans setup` | 互動式精靈:語言、顯示模式、後端、API key |
 | `cctrans key [id] [value]` | 管理 `~/.cc-translate/keys.json` 中的 API key |
 | `cctrans input on` / `cctrans input off` | **(beta)** 把非英文輸入翻譯成英文(作為上下文傳給模型) |
@@ -115,7 +120,7 @@ Claude 串流輸出英文
 
 ## 🧩 顯示模式
 
-`line`(預設)逐行對照:每行英文下方一行譯文,隨回覆串流出現。`section` 讓英文完全按 Claude 的串流輸出原樣呈現,在**一個區塊完成時**插入一段成組譯文——對列表很多的回覆要安靜得多:
+`line`(預設)逐行對照:每行英文下方一行譯文,隨回覆串流出現。`section` 讓英文完全按 Claude 的串流輸出原樣呈現,在**一個區塊完成時**插入一段成組譯文——對列表很多的回覆要安靜得多。`message` 更進一步:整則回覆以純英文串流輸出,**一段成組譯文在最後才出現**:
 
 ```
 Use these flags:
@@ -130,10 +135,10 @@ Use these flags:
 ```
 
 ```bash
-cctrans mode section   # 隨時切回:cctrans mode line
+cctrans mode section   # 按區塊 · cctrans mode message —— 整則回覆 · cctrans mode line —— 切回預設
 ```
 
-> section 模式下,一個區塊的譯文在**該區塊完成時**才出現,而不是邊串流邊出——後端慢時(如 `claude-code`,3–6 秒/次)這個停頓會比較明顯,所以這裡 API 後端體驗最好。某個區塊翻譯失敗時,英文不受影響,該區塊只是保持未翻譯。
+> section/message 模式下,譯文在**所在區塊(或整則回覆)完成時**才出現,而不是邊串流邊出——後端慢時(如 `claude-code`,3–6 秒/次)這個停頓會比較明顯,所以這裡 API 後端體驗最好。某個區塊翻譯失敗時,英文不受影響,該區塊只是保持未翻譯。
 
 ## 🌐 翻譯後端
 
@@ -154,18 +159,42 @@ API key **只**存放在 `~/.cc-translate/keys.json`(chmod 600)——用 `cctran
 
 ## 🗣 多語言
 
-目標語言支援 **CJK + 俄語 + 印地語**(非拉丁文字,可按 Unicode 區間零成本判斷「該行已是目標語言」並跳過):
-
 ```bash
-cctrans lang ja       # 日語
-cctrans lang ko       # 韓語
-cctrans lang ru       # 俄語
-cctrans lang hi       # 印地語
-cctrans lang zh-Hant  # 繁體中文
-cctrans lang zh-Hans  # 簡體中文(預設)
+cctrans lang zh-Hans  # 簡體中文(預設)    cctrans lang zh-Hant  # 繁體中文
+cctrans lang ja       # 日語                cctrans lang ko       # 韓語
+cctrans lang ru       # 俄語                cctrans lang hi       # 印地語
+cctrans lang es       # 西班牙語            cctrans lang pt       # 葡萄牙語
+cctrans lang fr       # 法語                cctrans lang de       # 德語
 ```
 
+**CJK + 俄語 + 印地語**(非拉丁文字)可按 Unicode 區間零成本判斷「該行已是目標語言」並跳過;**西班牙語 / 葡萄牙語 / 法語 / 德語**(拉丁文字)則改用保守的停用詞啟發式——即使某行已是目標語言仍被重新翻譯,同一性檢查也會抑制原樣回顯,最壞情況只是浪費一次後端呼叫,絕不會出現錯行。注意拉丁文字語言省下的 token 較少(相對英文約 1.1–1.2×,非拉丁文字為 1.5–3×——見 [MOTIVATION.md](MOTIVATION.md));對這些語言而言,吸引力主要是雙語顯示本身。
+
 中文採用 BCP-47 **文字碼**(`zh-Hans`/`zh-Hant`)——繁體是文字系統而非地區;`zh-CN` / `zh-TW` 仍可作為別名使用,會自動正規化。切換語言立即生效(鉤子每次呼叫都讀取狀態),不同語言的快取相互獨立。
+
+## 📁 專案層級覆寫
+
+在儲存庫根目錄(工作目錄的任一上層目錄皆可)放一個 `.cc-translate.json`,即可只為該專案覆寫全域設定:
+
+```json
+{ "target": "ja", "mode": "section" }
+```
+
+或用 `{ "enabled": false }` 為特定專案關閉 overlay。可覆寫的欄位:`enabled`、`target`、`mode`、`backend`、`marker`、`model`、`inputEn`、`inputMinChars`。機密不可覆寫——key 仍只存放在 `~/.cc-translate/keys.json`,端點設定也刻意只在全域層級生效。在專案裡執行 `cctrans status` 和 `cctrans doctor` 都會顯示專案覆寫是否生效。請把 clone 下來的儲存庫裡的 `.cc-translate.json` 視為其程式碼的一部分:例如,它可以為在該儲存庫中進行的工作切換後端(包括會消耗你訂閱額度的 `claude-code`)。
+
+## 🩺 疑難排解
+
+overlay 在設計上是故障安全的:任何錯誤都降級為純英文,而不是卡住工作階段——這也意味著失敗是**無聲的**。當什麼都沒在翻譯時:
+
+```bash
+cctrans doctor
+```
+
+它會檢查鉤子註冊(包括舊版安裝留下的失效路徑)、Claude Code 版本(MessageDisplay 需要 ≥ 2.1.152)、設定的後端及其 key、即時連線(含延遲),以及**最近一次鉤子錯誤**(鉤子在串流途中失敗時會把錯誤記錄到 `~/.cc-translate/last-error.json`)。想看看 overlay 為你做了什麼:
+
+```bash
+cctrans stats    # 已翻譯行數 + 估算省下的主對話 token
+cctrans cache    # 翻譯快取大小;clear / gc 管理(預設 200 MB 上限)
+```
 
 ## ⌨️ 輸入翻譯(beta)
 
@@ -177,8 +206,8 @@ cctrans lang zh-Hans  # 簡體中文(預設)
 
 - 鉤子在**串流輸出中**按片段觸發,每段單獨翻譯並就地替換——所以譯文會隨英文逐段出現。
 - 鉤子有 **10 秒**逾時;本工具內部 9 秒保底。任何錯誤/逾時/超長(>9000 字元)都會**安全回退成原始英文**,絕不卡住工作階段。
-- 每行譯文按內容雜湊**快取**(`~/.cc-translate/cache`),重繪與重複文字零成本。兩種模式共享同一快取。
-- section 模式下,進行中區塊的文字會緩衝在 `~/.cc-translate/msgstate`(落盤暴露面與快取相同);訊息完成後該檔案即刪除,逾期殘留檔案 24 小時後清理。
+- 每行譯文按內容雜湊**快取**(`~/.cc-translate/cache`,200 MB 上限,每日清理),重繪與重複文字零成本。所有模式共享同一快取。
+- section/message 模式下,進行中區塊的文字會緩衝在 `~/.cc-translate/msgstate`(落盤暴露面與快取相同);訊息完成後該檔案即刪除,逾期殘留檔案 24 小時後清理。
 - 用 `openai` 時每段約一次 API 呼叫(~$0.0001),串流輸出會比純英文多約 1 秒/段的延遲;`google` 較快但品質略低。
 
 ## 🔗 關注專案

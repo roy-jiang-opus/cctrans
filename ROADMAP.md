@@ -14,8 +14,17 @@
 ### ✅ Per-tool API-key config (no env cross-pollution)
 Keys live **only** in `~/.cc-translate/keys.json` (chmod 600, atomic writes), managed via `cctrans key <id> [value|--clear]`, the setup wizard, or direct file edits. Shell environment variables are **never** consulted — no overrides, no opt-in. All non-secret settings (backend, language, marker, models, Azure endpoint) live in `~/.cc-translate/state.json`. The only env vars the tool reads are internal plumbing: `CCTRANS_HOME` / `CCTRANS_TRANSCRIPT` (tests) and `CCTRANS_DISABLE` / `CCTRANS_DEBUG_STDIN` (hook internals).
 
+### ✅ Latin-script targets (es / pt / fr / de)
+"Already in target language" can't use Unicode ranges for Latin scripts, so these use a conservative stopword heuristic (>= 2 target-stopword hits and more than the English-stopword hits) — a false positive would silently skip translation, while a false negative just re-translates and the identity check suppresses the echo. Token savings are honestly smaller here (~1.1–1.2×); the draw is the bilingual display.
+
+### ✅ Diagnostics & self-service: doctor, stats, cache
+The fail-safe design makes failures silent, so `cctrans doctor` explains them: hook registration (incl. stale paths from old installs), Claude Code version (MessageDisplay needs >= 2.1.152), backend/key state, live connectivity probes, and the last hook error (hooks record `~/.cc-translate/last-error.json`). `cctrans stats` turns the headline into the user's own number (lines translated → estimated main-loop tokens saved, per-language ratios). `cctrans cache` shows/clears the translation cache, with a 200 MB cap enforced daily from CLI commands (never from the hook).
+
+### ✅ Whole-reply mode + per-project config
+`cctrans mode message` streams the reply in plain English and appends one grouped translation at the end (the section-mode flush machinery with text boundaries suppressed). A `.cc-translate.json` at a repo root overrides language/mode/backend — or disables the overlay — for that project only; `cctrans status`/`doctor` show when an override is active.
+
 ## Planned
 
-- **Latin-script output targets** (e.g. English, Spanish): the current "already in target language" skip detection relies on Unicode script ranges, which can't separate Latin-script targets from English source; needs a stopword-heuristic detector. (`en` is already wired internally for the input direction.)
 - **Glossary / terminology pinning**: force consistent translations for project-specific terms across all backends.
+- **Input translation out of beta**: graduate `cctrans input` once enough field feedback accumulates; Latin-script input languages need the stopword detector on the input path too.
 - ~~npm publish~~ → **shipped as `cctrans`** (npm's typosquat rule blocks `cctranslate` — too similar to the existing `cc-translate`).

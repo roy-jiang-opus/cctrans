@@ -54,8 +54,9 @@ async function runSetup(opts) {
       console.log('\n' + C.bold('Display mode') + ':');
       console.log('  1. line     ' + C.dim('translation under each English line, as it streams'));
       console.log('  2. section  ' + C.dim('English block first, then its translation — appears when the block completes'));
+      console.log('  3. message  ' + C.dim('whole reply first, one grouped translation at the very end'));
       const a = await ask('Pick a number or name', getState().mode);
-      mode = a === '1' ? 'line' : a === '2' ? 'section' : a;
+      mode = a === '1' ? 'line' : a === '2' ? 'section' : a === '3' ? 'message' : a;
     }
     if (!MODES.includes(mode)) { console.error(C.red('unknown mode: ' + mode + ' (available: ' + MODES.join(', ') + ')')); return false; }
 
