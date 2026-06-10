@@ -237,7 +237,7 @@ cctrans cache    # translation-cache size; clear / gc to manage it (200 MB cap b
 ## 📏 Behavior & limits (verified)
 
 - The hook fires **per chunk during streaming**; each chunk is translated and replaced in place — translations appear progressively alongside the English.
-- The hook has a **10-second** timeout; this tool guards at 9s internally. Any error / timeout / oversized chunk (>9,000 chars) **falls back safely to the original English** — it never stalls the session.
+- The hook has a **10-second** timeout; this tool guards at 9s internally. Any error / timeout / an oversized chunk **falls back safely to the original English** — it never stalls the session.
 - Every translated line is **cached** by content hash (`~/.cc-translate/cache`, 200 MB cap enforced daily); repaints and repeated text cost nothing. All modes share the cache.
 - In section/message mode an in-flight block's text is buffered in `~/.cc-translate/msgstate` (same at-rest exposure as the cache); the file is removed when the message completes and stale ones are swept after 24h.
 - With `openai`, each chunk is roughly one API call (~$0.0001) and adds about 1s of latency vs. plain English; `google` is faster with slightly lower quality.

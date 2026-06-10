@@ -6,6 +6,14 @@
 const { translateLines } = require('./translate');
 const { isProbablyTarget } = require('./langs');
 
+// Max displayContent length before we give up and show the original English.
+// The interleaved string holds BOTH the English and the translation, so a long
+// block is ~2× its own size — at the old 9000 a long final paragraph (≈4800
+// chars) overflowed and rendered untranslated. Claude Code's real MessageDisplay
+// output limit is much higher: probed live on CC 2.1.172, a 20000-char
+// displayContent rendered in full. 16000 keeps comfortable headroom.
+const DISPLAY_CAP = 16000;
+
 function looksLikeCodeish(s) {
   const t = s.trim();
   if (!t) return false;
@@ -185,7 +193,7 @@ async function buildDisplayContent(rawDelta, opts) {
   // on separate lines. Hard break (two trailing spaces) only if a future
   // renderer soft-wraps adjacent lines together.
   const hardBreak = opts.hardBreak === true;
-  const cap = opts.cap || 9000;
+  const cap = opts.cap || DISPLAY_CAP;
 
   const target = opts.target || 'zh-Hans';
   const lines = String(rawDelta).split('\n');
@@ -333,7 +341,7 @@ function planSections(rawDelta, opts) {
 async function renderSections(planned, opts) {
   opts = opts || {};
   const marker = opts.marker || '↳ ';
-  const cap = opts.cap || 9000;
+  const cap = opts.cap || DISPLAY_CAP;
   const tableFlushes = planned.tableFlushes || [];
   if (!planned.flushes.length && !tableFlushes.length) return null;
 

@@ -29,10 +29,16 @@ const ZH = {
   'The cache is content-addressed.': '缓存按内容寻址。',
   'This explains the command.': '这是对该命令的解释。',
 };
+// A long single-line paragraph (≈4800 chars) — at the old 9000-char cap its
+// EN+ZH displayContent (~2×) overflowed and rendered UNTRANSLATED (the reported
+// "end of a long document isn't translated" bug). DISPLAY_CAP is now 16000.
+const LONG_EN = 'Continuous integration is a development practice. ' + 'x'.repeat(4800);
+const LONG_ZH = '持续集成是一种开发实践。' + '词'.repeat(2400);
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 for (const [en, zh] of Object.entries(ZH)) {
   fs.writeFileSync(path.join(CACHE_DIR, cacheKey(en, 'zh-Hans', 'google') + '.txt'), zh);
 }
+fs.writeFileSync(path.join(CACHE_DIR, cacheKey(LONG_EN, 'zh-Hans', 'google') + '.txt'), LONG_ZH);
 
 async function lines(delta) {
   const r = await buildDisplayContent(delta, { backend: 'google', inFence: false });
@@ -67,7 +73,13 @@ async function run() {
   l = await lines('This explains the command.\n');
   assert.ok(/^↳ /.test(l[1]), 'plain prose keeps the bare marker');
 
-  console.log('PASS: block markdown stripped for translation and re-applied on the translated line.');
+  // A long paragraph (EN+ZH ≈ 9700 chars) must still translate — it overflowed
+  // the old 9000 cap and rendered untranslated.
+  l = await lines(LONG_EN + '\n');
+  assert.ok(l && l[1] && l[1].startsWith('↳ ' + LONG_ZH.slice(0, 12)),
+    'a long paragraph over the OLD cap is now translated, not dropped');
+
+  console.log('PASS: block markdown stripped for translation and re-applied on the translated line; long blocks no longer dropped.');
 }
 
 run().catch((e) => { console.error('FAIL:', e.message); process.exit(1); });

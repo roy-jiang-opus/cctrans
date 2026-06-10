@@ -14,7 +14,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - Plain `\n` renders EN and ZH on separate lines (verified on CC 2.1.169). Deltas are
   **non-overlapping** (index 0,1,2…; one `final:true`), so each is translated once.
 - Exit 0 with no stdout → CC shows the original delta. The hook fails safe: disabled /
-  empty / error / >9s / >9000 chars → emit nothing → original English.
+  empty / error / >9s / displayContent over DISPLAY_CAP (16000) → emit nothing → original English.
 
 ## Files
 - `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/backend/backends/setup/key/input/
@@ -104,7 +104,12 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   the globally-registered hook wins over the probe's.
 - `keybindings.json` cannot run shell commands or toggle hooks → there is no true
   in-TUI hotkey. Toggle is a flag (`cctrans on/off`), fastest via `!cctrans off` inside CC.
-- MessageDisplay timeout is 10s; output cap ~10k chars. Keep per-delta work fast.
+- MessageDisplay timeout is 10s. CC's displayContent output limit is HIGH — probed
+  live on 2.1.172: a 20000-char displayContent rendered in full. We self-cap at
+  DISPLAY_CAP=16000 (interleave.js): the interleaved string holds EN+ZH (~2× a
+  block's size), so the old 9000 cap dropped long final paragraphs (≈4800 chars)
+  untranslated — that was the "end of a long document isn't translated" bug. Keep
+  per-delta work fast regardless.
 - `UserPromptSubmit`/`UserPromptExpansion` output schemas (verified on 2.1.169 AND
   2.1.170 binaries) allow only `additionalContext` + block — hooks CANNOT rewrite the
   prompt. Input translation therefore attaches the English as context; the original
