@@ -11,6 +11,11 @@ Release notes are also published on
 
 ### Added
 
+- **Arrow-key setup.** `cctrans setup` (and the prompts during `cctrans install`)
+  are now an interactive ↑/↓ menu — pick your language, display mode, and backend
+  by selecting, not typing. Still zero npm dependencies; non-interactive use
+  (flags / `--yes` / piped) is unchanged.
+
 - **Translated question dialogs.** Claude Code's interactive question dialog
   (AskUserQuestion) is now shown in your language — the question, option labels,
   and descriptions — while the model still reads English (a PreToolUse hook
