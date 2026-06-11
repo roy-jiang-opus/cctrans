@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are also published on
 [GitHub Releases](https://github.com/roy-jiang-opus/cctrans/releases).
 
+## [Unreleased]
+
+### Changed
+
+- `cctrans install` now flows straight into the settings editor after
+  registering the hooks (the duplicate "Next steps" block that printed before
+  the editor is gone); the onboarding reminder is shown once, after you save.
+
 ## [0.5.2] - 2026-06-11
 
 ### Added

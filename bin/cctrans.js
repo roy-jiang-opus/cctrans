@@ -163,11 +163,16 @@ function install() {
   } else if (ccv.parts && !ccAtLeast(ccv.parts, MIN_CC_DIALOG)) {
     console.log(C.dim('  (Claude Code ' + ccv.raw + ': question-dialog answer-restore needs >= ' + MIN_CC_DIALOG.join('.') + '; consider `cctrans dialog off` or upgrading)'));
   }
+}
+
+// Onboarding reminder, printed once AFTER hooks are registered + settings are
+// configured (the interactive path prints its own next-steps via runSetup).
+function nextSteps() {
   console.log('');
   console.log('Next:');
-  console.log('  1. Restart Claude Code (new session) so the hook loads.');
+  console.log('  1. Restart Claude Code (new session) so the hooks load.');
   console.log('  2. Send any message — replies now show ' + C.bold('English + 中文') + ' inline.');
-  console.log('  3. Toggle anytime:  ' + C.bold('!cctrans off') + ' / ' + C.bold('!cctrans on') + '  (typed inside Claude Code).');
+  console.log('  3. Adjust anytime:  ' + C.bold('cctrans settings') + '  ·  toggle with ' + C.bold('!cctrans off') + ' / ' + C.bold('!cctrans on') + ' inside Claude Code.');
 }
 
 function uninstall() {
@@ -580,10 +585,12 @@ async function main() {
       break;
     }
     case 'install': {
-      install();
+      install(); // register hooks + symlink + version checks
       if (process.stdin.isTTY && !rest.includes('--no-setup')) {
-        console.log('');
+        // interactive: opens the settings editor, then verifies + prints next steps
         if (!(await require('../src/setup').runSetup({}))) process.exit(1);
+      } else {
+        nextSteps();
       }
       break;
     }
