@@ -40,8 +40,8 @@ for (const [en, zh] of Object.entries(ZH)) {
 }
 fs.writeFileSync(path.join(CACHE_DIR, cacheKey(LONG_EN, 'zh-Hans', 'google') + '.txt'), LONG_ZH);
 
-async function lines(delta) {
-  const r = await buildDisplayContent(delta, { backend: 'google', inFence: false });
+async function lines(delta, extra) {
+  const r = await buildDisplayContent(delta, Object.assign({ backend: 'google', inFence: false }, extra));
   return r.displayContent === null ? null : r.displayContent.split('\n');
 }
 
@@ -79,7 +79,27 @@ async function run() {
   assert.ok(l && l[1] && l[1].startsWith('↳ ' + LONG_ZH.slice(0, 12)),
     'a long paragraph over the OLD cap is now translated, not dropped');
 
-  console.log('PASS: block markdown stripped for translation and re-applied on the translated line; long blocks no longer dropped.');
+  // --- adjustable line spacing (gapWithin / gapBetween) on an adjacent list ---
+  const LIST = '- Fix the login bug\n- Add retry logic\n';
+  // gapBetween:0 — tight, no blank between the two pairs (the pre-spacing look)
+  l = await lines(LIST, { gapWithin: 0, gapBetween: 0 });
+  assert.deepStrictEqual(l, ['- Fix the login bug', '  ↳ 修复登录缺陷', '- Add retry logic', '  ↳ 添加重试逻辑', ''],
+    'gapBetween:0 keeps adjacent list pairs tight');
+  // gapBetween:1 (default) — a blank line separates the two translated pairs
+  l = await lines(LIST, { gapWithin: 0, gapBetween: 1 });
+  assert.deepStrictEqual(l, ['- Fix the login bug', '  ↳ 修复登录缺陷', '', '- Add retry logic', '  ↳ 添加重试逻辑', ''],
+    'gapBetween:1 separates adjacent translated lines with a blank');
+  // gapWithin:1 — a blank between each English line and its translation
+  l = await lines(LIST, { gapWithin: 1, gapBetween: 0 });
+  assert.deepStrictEqual(l, ['- Fix the login bug', '', '  ↳ 修复登录缺陷', '- Add retry logic', '', '  ↳ 添加重试逻辑', ''],
+    'gapWithin:1 separates each English line from its translation');
+  // a single paragraph (next line is the trailing-\n artifact, not prose) gets
+  // no gapBetween even at the default — only adjacent prose lines do.
+  l = await lines('This explains the command.\n', { gapBetween: 1 });
+  assert.deepStrictEqual(l, ['This explains the command.', '↳ 这是对该命令的解释。', ''],
+    'a lone paragraph is not given a trailing gap');
+
+  console.log('PASS: block markdown re-applied; long blocks kept; line spacing (gapWithin/gapBetween) adjustable.');
 }
 
 run().catch((e) => { console.error('FAIL:', e.message); process.exit(1); });

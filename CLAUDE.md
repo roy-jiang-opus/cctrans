@@ -17,7 +17,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / displayContent over DISPLAY_CAP (16000) → emit nothing → original English.
 
 ## Files
-- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/backend/backends/setup/key/input/
+- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/dialog/backend/backends/settings/setup/key/input/
   install/uninstall/last/test/doctor/stats/cache/--version. `doctor` is the counterpart to the
   fail-safe design (failures are silent → doctor explains them: hook registration incl. stale
   paths, CC version >= 2.1.152, live backend probes bypassing the cache, last-error.json).
@@ -74,6 +74,11 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   per-LINE, so both modes share the sha1 cache and backend prompts are untouched. The trailing
   `''` from split('\n') is the delta's trailing-\n encoding, NOT a blank line (all non-final
   deltas end with \n; final never does). Verified live on CC 2.1.172 (section list + message).
+  LINE-MODE SPACING (adjustable, default 0/1): `gapWithin` blank line(s) between an English line
+  and its ↳ translation; `gapBetween` blank line(s) between ADJACENT translated lines (e.g. list
+  items) — appended only where the next plan line is also prose, so paragraphs (already carrying
+  an original blank) are never double-spaced. within < between is the intended look. Applies to
+  line mode only; section/message keep their grouped-block spacing.
   DISPLAY (`cctrans display append|replace`, default append): replace shows the translation IN
   PLACE of the English (`prefix + zh` — real bullet/heading, no ↳ marker) instead of pair()'s
   EN+↳ZH. Replace is LINE-MODE ONLY — section/message stream the English first by design and
@@ -91,18 +96,21 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
 - `src/backends/` — backend registry: openai, anthropic (Haiku + structured outputs), deepl, azure, google (free fallback), claude-code (`claude -p`, ~3-6s, uses subscription)
 - `src/translate.js` — orchestrator: sha1 cache + fallback chain (primary → google)
 - `src/keys.js` — API keys in `~/.cc-translate/keys.json` (0600), the ONLY key source — env vars are never read. Must NOT require config.js (config requires keys for the default backend).
-- `src/setup.js` — back/forward setup WIZARD (interactive): a step list (lang → mode →
-  append/replace → backend → key → input) driven by index, with ←/Backspace going back
-  (choices preserved) and conditional steps auto-skipped (display only in line mode; key only
-  when the backend needs one and it's unset), ending in an EDITABLE REVIEW (↑/↓ over the chosen
-  settings + Save; Enter on a setting jumps back to re-pick it and returns to review; Enter/S on
-  Save writes + verifies). Non-interactive (--yes / no TTY) seeds a draft from flags then current
-  state and saves directly, no UI. Flags --lang --mode --display --backend --key --input --yes.
-- `src/prompt.js` — zero-dep interactive prompts. `select()`: arrow-key menu (raw-mode stdin +
-  ANSI), ↑/↓ or j/k (skips `sep` separator rows), 1-9 jump, per-option `hotkey`, →/Enter confirm,
-  ←/Backspace resolve the `BACK` sentinel when `allowBack`, optional `footer`, Ctrl-C aborts;
-  handles batched keystrokes token-by-token. `question()`: text input. Both fall back to the
-  initial/default off-TTY without hanging (test/prompt.js + watchdog). No npm deps.
+- `src/settings.js` — the single-screen interactive settings EDITOR (`cctrans settings`, and the
+  interactive part of `cctrans setup`/install). Renders in the terminal's ALTERNATE screen buffer
+  (`\x1b[?1049h/l`) so it repaints in place and leaves NO scrollback history (the "install shows
+  history" aesthetic fix). ↑/↓ (or j/k) move · ←/→ (or h/l) change the focused value (bool toggle
+  / enum cycle / int clamp) · Enter edits text inline (raw-mode buffer, no readline) or opens
+  Advanced / Save · q or Esc save & exit · Ctrl-C cancels. Two pages: BASIC (enabled, language,
+  mode, display [line only], backend, API key [keyed backends], dialog, input) and ADVANCED
+  (gapWithin, gapBetween, marker, models, azureEndpoint, inputMinChars, cacheMaxMB). Edits a draft
+  of getState() and persists via setState() on save; keys go to keys.json. A data chunk may batch
+  several keys (fast input / paste / test driver) — splitKeys() tokenizes it. Off-TTY → returns
+  null (caller falls back). Value logic (basicFields/advancedFields/cycle) is unit-tested
+  (test/settings.js); the live UI is tmux-smoked per release.
+- `src/setup.js` — thin: interactive → runSettings (the editor) seeded from flags; non-interactive
+  (--yes / no TTY / flags) applies flags onto current state and saves directly; then verifies +
+  prints next steps. Flags --lang --mode --display --backend --key --input --yes.
 - `src/config.js` — state in `~/.cc-translate/state.json`, cache in `~/.cc-translate/cache`.
   `getState(cwd)` overlays a `.cc-translate.json` found by walking UP from cwd (hooks pass
   stdin cwd, CLI passes process.cwd()): whitelist-only overrides incl. `enabled` (per-repo
@@ -156,9 +164,9 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   registry only) — the npm link lives in the repo About homepage + README badges.
 
 ## Testing
-- `npm test` — 10 offline deterministic suites (fence, markdown, section, latin, message,
-  project, stats, table, replace, dialog): each mkdtemps a CCTRANS_HOME and pre-seeds the sha1
-  cache, so NO network.
+- `npm test` — 12 offline deterministic suites (fence, markdown, section, latin, message,
+  project, stats, table, replace, dialog, settings): each mkdtemps a CCTRANS_HOME and pre-seeds
+  the sha1 cache, so NO network.
   CI runs them on push/PR (node 18/20/22/24) and before npm publish.
 - `node bin/cctrans.js test "<text>"` — engine only.
 - Live TUI: register the hook in a throwaway dir's `.claude/settings.json`, drive

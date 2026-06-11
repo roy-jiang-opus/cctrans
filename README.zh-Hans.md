@@ -40,6 +40,7 @@
 - 🔒 **密钥隔离** —— API key 只存在 chmod-600 的文件里,从不读终端环境变量
 - 🛟 **故障安全** —— 任何错误或超时都回退为纯英文,绝不卡住会话
 - 🩺 **内置诊断** —— `cctrans doctor` 解释为什么没在翻译;`cctrans stats` 显示你省下的 token
+- 🎚️ **交互式设置** —— `cctrans settings` 打开单屏编辑器(方向键操作);调节间距、标记、模型等等,涵盖基础与高级选项
 
 ## 🚀 快速开始
 
@@ -47,7 +48,7 @@
 npm install -g cctrans@latest && cctrans install
 ```
 
-安装会注册钩子并引导你完成配置(语言 → 显示模式 → 后端 → API key → 实时验证)。然后**重启 Claude Code**——回复变成双语。随时在 Claude Code 输入框里输入 `!cctrans off` / `!cctrans on` 开关(`!` 是 CC 内置 bash 模式,不调用模型、不花 token)。
+安装会注册钩子并打开一个交互式设置编辑器(语言、显示模式、后端、API key —— 随时用 `cctrans settings` 重新打开)。然后**重启 Claude Code**——回复变成双语。随时在 Claude Code 输入框里输入 `!cctrans off` / `!cctrans on` 开关(`!` 是 CC 内置 bash 模式,不调用模型、不花 token)。
 
 **已经装过?** 用 `npm install -g cctrans@latest` 更新——从下一条回复起生效(钩子每个分块都从磁盘重新运行);你的设置、密钥和已注册的钩子原样保留,无需重新配置。
 
@@ -109,6 +110,7 @@ Claude 流式输出英文
 | `cctrans mode [line\|section\|message]` | 排版:逐行、按块,或整条回复 |
 | `cctrans display [append\|replace]` | 在英文下方显示译文,或在原位替换它(line 模式) |
 | `cctrans dialog [on\|off]` | 翻译 Claude Code 的问题对话(默认开启) |
+| `cctrans settings` | 打开交互式设置编辑器(基础 + 高级) |
 | `cctrans backend <id>` | 切换翻译引擎 |
 | `cctrans backends` | 列出所有引擎及其可用性 |
 | `cctrans doctor` | 诊断:钩子、Claude Code 版本、后端、密钥、最近一次钩子错误 |

@@ -31,7 +31,7 @@ const DISPLAYS = ['append', 'replace'];
 // azureEndpoint: a repo-controlled endpoint that receives the Azure key would
 // be an exfiltration vector, so endpoint config stays global-only.
 const PROJECT_FILE = '.cc-translate.json';
-const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'display', 'dialog', 'inputEn', 'inputMinChars'];
+const PROJECT_OVERRIDABLE = ['enabled', 'backend', 'target', 'model', 'marker', 'mode', 'display', 'dialog', 'gapWithin', 'gapBetween', 'inputEn', 'inputMinChars'];
 
 // Walk up from cwd looking for a project file (stops at the filesystem root).
 function findProjectFile(cwd) {
@@ -76,6 +76,8 @@ function defaults() {
     marker: '↳ ', // prefix on each translated line
     mode: 'line', // display layout, one of MODES: line / section / message
     display: 'append', // 'append' (ZH under EN) or 'replace' (ZH in place of EN; line mode only)
+    gapWithin: 0, // line mode: blank lines between an English line and its translation (0..1)
+    gapBetween: 1, // line mode: blank lines between adjacent translated lines, e.g. list items (0..2)
     dialog: true, // translate AskUserQuestion dialogs (PreToolUse rewrite + PostToolUse restore)
     inputEn: false, // input translation (beta, prompt -> English) off until enabled
     inputMinChars: 4, // non-Latin chars in a prompt that trigger input translation
@@ -123,6 +125,8 @@ function setState(patch) {
     marker: next.marker,
     mode: next.mode,
     display: next.display,
+    gapWithin: next.gapWithin,
+    gapBetween: next.gapBetween,
     dialog: next.dialog,
     inputEn: next.inputEn,
     inputMinChars: next.inputMinChars,

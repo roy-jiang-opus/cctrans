@@ -449,7 +449,7 @@ async function renderText(text) {
     // final:true so a trailing markdown table flushes its translated copy.
     displayContent = (await buildDisplayContent(text, {
       target: st.target, backend: st.backend, model: st.model, marker: st.marker,
-      display: st.display, timeoutMs: 12000, final: true,
+      display: st.display, gapWithin: st.gapWithin, gapBetween: st.gapBetween, timeoutMs: 12000, final: true,
     })).displayContent;
   }
   if (displayContent == null) { process.stdout.write(text + '\n'); return; }
@@ -486,8 +486,9 @@ ${C.bold('Diagnostics')}
   cctrans cache [clear|gc]       translation-cache size / clear / enforce the size cap
 
 ${C.bold('Setup')}
-  cctrans install                register hooks (+ link cctrans), then run setup
-  cctrans setup                  interactive wizard: language, display mode, backend, API keys
+  cctrans settings               open the interactive settings editor (basic + advanced)
+  cctrans install                register hooks (+ link cctrans), then configure
+  cctrans setup                  (re)configure: opens the settings editor, or use flags
                             (flags: --lang --mode --display --backend --key --input --yes)
   cctrans key [id] [value]       manage API keys in ~/.cc-translate/keys.json
                             (ids: openai, anthropic, deepl, azure, azure-region)
@@ -598,6 +599,12 @@ async function main() {
         yes: rest.includes('--yes'),
       });
       if (!okSetup) process.exit(1); // scripted setup must be able to detect validation failures
+      break;
+    }
+    case 'settings': {
+      const r = await require('../src/settings').runSettings({});
+      if (r === null) { console.error('cctrans settings needs an interactive terminal; use `cctrans setup --lang … --backend …` non-interactively, or edit ' + STATE_FILE); process.exit(1); }
+      else if (r) console.log(C.green('✓') + ' settings saved' + C.dim('  — restart Claude Code (new session) for changes to take effect'));
       break;
     }
     case 'key': keyCmd(rest); break;

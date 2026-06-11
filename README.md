@@ -40,6 +40,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 - 🔒 **Key isolation** — API keys live only in a chmod-600 file; shell env vars are never read
 - 🛟 **Fail-safe** — any error or timeout falls back to plain English; it never blocks your session
 - 🩺 **Built-in diagnostics** — `cctrans doctor` explains why nothing is translating; `cctrans stats` shows the tokens you saved
+- 🎚️ **Interactive settings** — `cctrans settings` opens a single-screen editor (arrow keys); tune spacing, marker, models and more, basic + advanced
 
 ## 🚀 Quick start
 
@@ -47,7 +48,7 @@ A **bilingual overlay** for Claude Code: a translated line (Chinese / Japanese /
 npm install -g cctrans@latest && cctrans install
 ```
 
-The install registers the hooks and walks you through setup (language → display mode → backend → API key → live verification). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
+The install registers the hooks and opens an interactive settings editor (language, display mode, backend, API key — `cctrans settings` reopens it anytime). Then **restart Claude Code** — replies become bilingual. Toggle anytime by typing `!cctrans off` / `!cctrans on` inside Claude Code (`!` is CC's built-in bash mode — no model call, no tokens).
 
 **Already installed?** Update with `npm install -g cctrans@latest` — it takes effect from the next reply (the hook runs fresh from disk on every chunk); your settings, keys, and registered hooks are untouched, no re-setup needed.
 
@@ -109,6 +110,7 @@ Claude streams English
 | `cctrans mode [line\|section\|message]` | layout: per line, per block, or whole reply |
 | `cctrans display [append\|replace]` | show the translation under the English, or in place of it (line mode) |
 | `cctrans dialog [on\|off]` | translate Claude Code's question dialogs (on by default) |
+| `cctrans settings` | open the interactive settings editor (basic + advanced) |
 | `cctrans backend <id>` | switch translation engine |
 | `cctrans backends` | list engines and their availability |
 | `cctrans doctor` | diagnose: hooks, Claude Code version, backends, keys, last hook error |

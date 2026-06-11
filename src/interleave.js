@@ -165,8 +165,9 @@ function zhLineFor(p, zh, marker, demoteStructure) {
 // How to place the Chinese line under the English line (line mode, append).
 // hardBreak=true uses a CommonMark hard line break (two trailing spaces) so the
 // two lines stay separate even if displayContent is markdown-rendered.
-function pair(p, zh, marker, hardBreak) {
-  const br = hardBreak ? '  \n' : '\n';
+// gapWithin adds blank line(s) between the English and its translation.
+function pair(p, zh, marker, hardBreak, gapWithin) {
+  const br = (hardBreak ? '  ' : '') + '\n' + '\n'.repeat(gapWithin || 0);
   return p.line + br + zhLineFor(p, zh, marker, false);
 }
 
@@ -218,6 +219,13 @@ async function buildDisplayContent(rawDelta, opts) {
   if (!prose.length && !tableFlushes.length) return { displayContent: null, inFence, inTable, tableBuf };
 
   const replace = opts.display === 'replace';
+  // Adjustable line-mode spacing: gapWithin between an English line and its
+  // translation; gapBetween between consecutive translated lines (e.g. list
+  // items). Paragraphs already carry an original blank, so gapBetween is added
+  // only where the next line is ANOTHER prose line (no original blank) — never
+  // doubling up. within < between is the intended look (default 0 / 1).
+  const gapWithin = Math.max(0, Math.min(1, opts.gapWithin || 0));
+  const gapBetween = Math.max(0, Math.min(2, opts.gapBetween == null ? 1 : opts.gapBetween));
   if (prose.length) {
     const zh = await translateLines(prose.map((x) => x.p.content), {
       target, backend: opts.backend, model: opts.model, timeoutMs: opts.timeoutMs,
@@ -226,7 +234,16 @@ async function buildDisplayContent(rawDelta, opts) {
       const t = zh[j]; const p = prose[j].p;
       // Identity/empty/failed -> keep the original line (never blank it out).
       if (t && t.trim() && t.trim() !== p.content.trim()) {
-        out[prose[j].pos] = replace ? replaceLine(p, t.trim()) : pair(p, t, marker, hardBreak);
+        out[prose[j].pos] = replace ? replaceLine(p, t.trim()) : pair(p, t, marker, hardBreak, gapWithin);
+      }
+    }
+    // gapBetween: append blank line(s) to a prose entry whose next plan line is
+    // also prose (adjacent units). Appending keeps out positions stable for the
+    // table splice below.
+    if (gapBetween > 0) {
+      for (let j = 0; j < prose.length; j++) {
+        const nx = plan[prose[j].pos + 1];
+        if (nx && nx.kind === 'prose') out[prose[j].pos] += '\n'.repeat(gapBetween);
       }
     }
   }

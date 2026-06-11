@@ -28,7 +28,9 @@ fs.mkdirSync(CACHE_DIR, { recursive: true });
 for (const [en, zh] of Object.entries(ZH)) {
   fs.writeFileSync(path.join(CACHE_DIR, cacheKey(en, 'zh-Hans', 'google') + '.txt'), zh);
 }
-const OPTS = { target: 'zh-Hans', backend: 'google', timeoutMs: 2000, display: 'replace' };
+// gapBetween:0 keeps adjacent lines tight so these assertions isolate the
+// replace-mode logic from the line-spacing feature (covered in markdown.js).
+const OPTS = { target: 'zh-Hans', backend: 'google', timeoutMs: 2000, display: 'replace', gapBetween: 0 };
 
 async function run() {
   // Plain prose: replaced by the translation, no English, no marker.

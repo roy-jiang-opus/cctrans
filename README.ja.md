@@ -40,6 +40,7 @@ Claude Code の**バイリンガル表示オーバーレイ**:各英語行の下
 - 🔒 **キーの隔離** —— API キーは chmod-600 のファイルのみ;シェル環境変数は一切読まない
 - 🛟 **フェイルセーフ** —— どんなエラーやタイムアウトも英語のみ表示にフォールバック;セッションを止めない
 - 🩺 **内蔵の診断機能** —— `cctrans doctor` が「なぜ何も翻訳されないか」を説明し、`cctrans stats` が節約したトークンを表示
+- 🎚️ **対話的な設定** —— `cctrans settings` が単一画面のエディタを開きます(矢印キー操作)。間隔、マーカー、モデルなどを調整、基本 + 詳細
 
 ## 🚀 クイックスタート
 
@@ -47,7 +48,7 @@ Claude Code の**バイリンガル表示オーバーレイ**:各英語行の下
 npm install -g cctrans@latest && cctrans install
 ```
 
-インストールがフックを登録し、セットアップを案内します(言語 → 表示モード → バックエンド → API キー → 即時検証)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。
+インストールがフックを登録し、対話的な設定エディタを開きます(言語、表示モード、バックエンド、API キー——`cctrans settings` でいつでも再び開けます)。その後 **Claude Code を再起動**——返信がバイリンガルになります。Claude Code の入力欄に `!cctrans off` / `!cctrans on` と打てばいつでも切替(`!` は CC 内蔵の bash モード——モデル呼び出しなし、トークン消費なし)。
 
 **すでにインストール済み?** `npm install -g cctrans@latest` で更新——次の返信から反映されます(フックはチャンクごとに毎回ディスクから実行されます)。設定、キー、登録済みフックはそのまま、再セットアップは不要です。
 
@@ -109,6 +110,7 @@ Claude が英語をストリーミング出力
 | `cctrans mode [line\|section\|message]` | レイアウト:行ごと、ブロックごと、または返信全体 |
 | `cctrans display [append\|replace]` | 訳文を英語の下に表示、またはその代わりに表示(line モード) |
 | `cctrans dialog [on\|off]` | Claude Code の質問ダイアログを翻訳(デフォルトでオン) |
+| `cctrans settings` | 対話的な設定エディタを開く(基本 + 詳細) |
 | `cctrans backend <id>` | 翻訳エンジンの切替 |
 | `cctrans backends` | 全エンジンと利用可否を一覧 |
 | `cctrans doctor` | 診断:フック、Claude Code バージョン、バックエンド、キー、直近のフックエラー |

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are also published on
 [GitHub Releases](https://github.com/roy-jiang-opus/cctrans/releases).
 
+## [Unreleased]
+
+### Added
+
+- **`cctrans settings` — an interactive settings editor.** A clean single-screen
+  page (it opens in the terminal's alternate screen, so it doesn't scroll your
+  history): ↑/↓ to move, ←/→ to change a value, Enter to edit text / open
+  Advanced / Save, q or Esc to save & exit. Shows the everyday settings up front
+  with an **Advanced** page behind one row (marker, models, Azure endpoint, line
+  spacing, input threshold, cache cap). `cctrans install` and `cctrans setup`
+  now use this same editor instead of a scrolling prompt sequence.
+- **Adjustable line spacing.** Two settings (in Advanced): the gap between an
+  English line and its translation, and the gap between adjacent translated
+  lines (e.g. list items). Defaults keep the original/translation gap smaller
+  than the between-lines gap; set both to 0 for the previous tight look.
+
 ## [0.5.1] - 2026-06-11
 
 ### Changed

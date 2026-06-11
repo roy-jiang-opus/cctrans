@@ -158,8 +158,8 @@ process.stdin.on('end', async () => {
   try {
     const r = await buildDisplayContent(delta, {
       target: st.target, backend: st.backend, model: st.model,
-      marker: st.marker, display: st.display, timeoutMs: 8000,
-      inFence: ms.inFence, inTable: ms.inTable, tableBuf: ms.tableBuf, final: final,
+      marker: st.marker, display: st.display, gapWithin: st.gapWithin, gapBetween: st.gapBetween,
+      timeoutMs: 8000, inFence: ms.inFence, inTable: ms.inTable, tableBuf: ms.tableBuf, final: final,
     });
     clearTimeout(guard);
     saveMsgState(id, index, 'line', r, final); // persist even when nothing was translated
