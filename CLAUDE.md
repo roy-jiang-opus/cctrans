@@ -17,7 +17,7 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   empty / error / >9s / displayContent over DISPLAY_CAP (16000) → emit nothing → original English.
 
 ## Files
-- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/dialog/backend/backends/settings/setup/key/input/
+- `bin/cctrans.js` — CLI: on/off/toggle/status/lang/mode/display/only/dialog/backend/backends/settings/setup/key/input/
   install/uninstall/last/test/doctor/stats/cache/--version. `doctor` is the counterpart to the
   fail-safe design (failures are silent → doctor explains them: hook registration incl. stale
   paths, CC version >= 2.1.152, live backend probes bypassing the cache, last-error.json).

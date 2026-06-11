@@ -109,6 +109,7 @@ Claude 串流輸出英文
 | `cctrans lang [code]` | 檢視/切換目標語言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | 排版:逐行、按區塊,或整則回覆 |
 | `cctrans display [append\|replace]` | 在英文下方顯示譯文,或在原位替換它(line 模式) |
+| `cctrans only [on\|off]` | **只**顯示譯文,隱藏英文(line 模式 + replace) |
 | `cctrans dialog [on\|off]` | 翻譯 Claude Code 的問題對話(預設開啟) |
 | `cctrans settings` | 開啟互動式設定編輯器(基礎 + 進階) |
 | `cctrans backend <id>` | 切換翻譯引擎 |
@@ -153,6 +154,8 @@ cctrans display replace   # 只顯示譯文 · cctrans display append —— 切
 ```
 
 替換在 **line 模式**下生效(section/message 在設計上先把英文串流輸出,因此沒有可替換的對象)。無論哪種方式,轉錄和模型上下文都保持 100% 英文;無法翻譯的行會保留原文,所以絕不會有內容憑空消失。
+
+**只想要你自己的語言,完全不要英文?** `cctrans only on` 正是為此提供的一鍵捷徑(它會設定 line 模式 + replace)。英文連一瞬都不會閃現 —— Claude Code 算繪出來的每一行都已是譯文 —— 而任何無法翻譯的行都會回退到它的英文;程式碼區塊原樣通過。`cctrans only off` 切回雙語。
 
 ## ❓ 問題對話
 

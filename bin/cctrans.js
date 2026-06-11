@@ -481,6 +481,7 @@ ${C.bold('Control')}
   cctrans lang [code]            show/set target language (zh-Hans, zh-Hant, ja, ko, ru, hi, es, pt, fr, de)
   cctrans mode [line|section|message]  layout: per line / per block / whole reply
   cctrans display [append|replace]     show ZH under the English, or in place of it (line mode)
+  cctrans only [on|off]                show ONLY the translation, hiding English (line mode + replace)
   cctrans dialog [on|off]              translate Claude Code's question dialogs (on by default)
   cctrans backend <id>           choose translation engine
   cctrans backends               list engines + availability
@@ -556,6 +557,20 @@ async function main() {
       console.log(C.green('✓') + ' display = ' + d + C.dim('  (' + DISPLAY_DESC[d] + ')') +
         (d === 'replace' && n.mode !== 'line' ? C.red('  (note: replace only takes effect in line mode; current mode is ' + n.mode + ')') : ''));
       noteProjectOverride('display', d);
+      break;
+    }
+    case 'only': {
+      // Convenience preset: "show only the translation, hide English" — that is
+      // line mode + replace (the only combination that fully hides English).
+      const sub = rest[0];
+      const isOnly = (s) => s.mode === 'line' && s.display === 'replace';
+      let st = getState();
+      if (sub === 'on') st = setState({ mode: 'line', display: 'replace' });
+      else if (sub === 'off') st = setState({ display: 'append' });
+      else if (sub === 'toggle') st = isOnly(st) ? setState({ display: 'append' }) : setState({ mode: 'line', display: 'replace' });
+      else if (sub) { console.error('usage: cctrans only [on|off]'); process.exit(1); }
+      console.log('translation-only (hide English): ' + (isOnly(st) ? C.green('ON') : C.red('OFF')) +
+        C.dim(isOnly(st) ? '  (line mode + replace; failed lines keep the English)' : '  (turn on: cctrans only on)'));
       break;
     }
     case 'dialog': {

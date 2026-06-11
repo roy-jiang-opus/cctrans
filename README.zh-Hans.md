@@ -109,6 +109,7 @@ Claude 流式输出英文
 | `cctrans lang [code]` | 查看/切换目标语言:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | 排版:逐行、按块,或整条回复 |
 | `cctrans display [append\|replace]` | 在英文下方显示译文,或在原位替换它(line 模式) |
+| `cctrans only [on\|off]` | **只**显示译文,隐藏英文(line 模式 + replace) |
 | `cctrans dialog [on\|off]` | 翻译 Claude Code 的问题对话(默认开启) |
 | `cctrans settings` | 打开交互式设置编辑器(基础 + 高级) |
 | `cctrans backend <id>` | 切换翻译引擎 |
@@ -153,6 +154,8 @@ cctrans display replace   # 只显示译文 · cctrans display append —— 切
 ```
 
 替换在 **line 模式**下生效(section/message 在设计上先把英文流式输出,因此没有可替换的对象)。无论哪种方式,转录和模型上下文都保持 100% 英文;无法翻译的行会保留原文,所以绝不会有内容凭空消失。
+
+**只想要你自己的语言,完全不要英文?** `cctrans only on` 正是为此提供的一键快捷方式(它会设置 line 模式 + replace)。英文连一瞬都不会闪现 —— Claude Code 渲染出来的每一行都已是译文 —— 而任何无法翻译的行都会回退到它的英文;代码块原样通过。`cctrans only off` 切回双语。
 
 ## ❓ 问题对话
 

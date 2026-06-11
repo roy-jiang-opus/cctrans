@@ -109,6 +109,7 @@ Claude streams English
 | `cctrans lang [code]` | show/set target language: `zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | layout: per line, per block, or whole reply |
 | `cctrans display [append\|replace]` | show the translation under the English, or in place of it (line mode) |
+| `cctrans only [on\|off]` | show **only** the translation, hiding English (line mode + replace) |
 | `cctrans dialog [on\|off]` | translate Claude Code's question dialogs (on by default) |
 | `cctrans settings` | open the interactive settings editor (basic + advanced) |
 | `cctrans backend <id>` | switch translation engine |
@@ -153,6 +154,8 @@ cctrans display replace   # only the translation · cctrans display append — b
 ```
 
 Replace takes effect in **line mode** (section/message stream the English first by design, so there is nothing to replace). The transcript and the model's context stay 100% English either way; a line that can't be translated keeps its original text, so nothing ever vanishes.
+
+**Want only your language, no English at all?** `cctrans only on` is a one-command shortcut for exactly that (it sets line mode + replace). The English never even flashes — Claude Code renders each line already translated — and any line that fails to translate falls back to its English; code blocks pass through untouched. `cctrans only off` returns to bilingual.
 
 ## ❓ Question dialogs
 

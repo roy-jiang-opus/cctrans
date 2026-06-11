@@ -109,6 +109,7 @@ Claude が英語をストリーミング出力
 | `cctrans lang [code]` | 目標言語の表示/設定:`zh-Hans` `zh-Hant` `ja` `ko` `ru` `hi` `es` `pt` `fr` `de` |
 | `cctrans mode [line\|section\|message]` | レイアウト:行ごと、ブロックごと、または返信全体 |
 | `cctrans display [append\|replace]` | 訳文を英語の下に表示、またはその代わりに表示(line モード) |
+| `cctrans only [on\|off]` | 訳文**のみ**を表示し、英語を隠す(line モード + replace) |
 | `cctrans dialog [on\|off]` | Claude Code の質問ダイアログを翻訳(デフォルトでオン) |
 | `cctrans settings` | 対話的な設定エディタを開く(基本 + 詳細) |
 | `cctrans backend <id>` | 翻訳エンジンの切替 |
@@ -153,6 +154,8 @@ cctrans display replace   # 訳文のみ · cctrans display append —— バイ
 ```
 
 置換が有効になるのは **line モード**です(section/message は設計上まず英語をストリーミングするため、置き換える対象がありません)。どちらの場合もトランスクリプトとモデルのコンテキストは 100% 英語のまま保たれます;翻訳できない行は元のテキストを保持するため、何も消えることはありません。
+
+**英語はいっさい不要で、自分の言語だけがいいですか?** `cctrans only on` はまさにそのためのワンコマンドのショートカットです(line モード + replace を設定します)。英語は一瞬たりとも現れません —— Claude Code は各行を翻訳済みの状態で描画します —— そして翻訳できなかった行はその英語にフォールバックします;コードブロックはそのまま通過します。`cctrans only off` でバイリンガルに戻ります。
 
 ## ❓ 質問ダイアログ
 

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are also published on
 [GitHub Releases](https://github.com/roy-jiang-opus/cctrans/releases).
 
+## [Unreleased]
+
+### Added
+
+- **`cctrans only [on|off]`** — a one-command "show only the translation, hide
+  English" preset (it sets line mode + replace, the combination that fully hides
+  the English). Lines that can't be translated still keep their English, and
+  code blocks pass through untouched. `cctrans only off` returns to bilingual.
+
 ## [0.5.3] - 2026-06-11
 
 ### Changed
