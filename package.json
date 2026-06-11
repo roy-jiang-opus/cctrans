@@ -1,6 +1,6 @@
 {
   "name": "cctrans",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Save up to 67% of Claude Code tokens: work in your language, billed 100% in English — a display-only translated line (zh/ja/ko/ru/hi) under each English line, zero main-loop tokens.",
   "license": "MIT",
   "author": "Roy Jiang",
