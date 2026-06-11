@@ -34,18 +34,21 @@ async function run() {
   // Mid-message delta: heading, blank, paragraph, fence — NO flush in message mode.
   let p0 = planSections(d0, { inFence: false, buf: [], target: 'zh-Hans', final: false, granularity: 'message' });
   assert.strictEqual(p0.flushes.length, 0, 'no boundary may flush mid-message');
-  assert.strictEqual(p0.buf.length, 2, 'heading + paragraph buffered (code passes through unbuffered)');
+  assert.strictEqual(p0.buf.filter((e) => !e.blank).length, 2, 'heading + paragraph buffered (code passes through unbuffered)');
+  assert.ok(p0.buf.some((e) => e.blank), 'original blank lines are recorded in the buffer (to mirror in the ZH block)');
   assert.strictEqual(await renderSections(p0, OPTS), null, 'mid-message delta renders untouched');
 
-  // Final delta: everything flushes as one grouped block at the very end.
+  // Final delta: everything flushes as ONE grouped block at the very end — a
+  // single ↳, the rest aligned under it, and the original paragraph blank lines
+  // preserved between the translated lines (the reported "blanks gone" fix).
   const p1 = planSections(d1, { inFence: p0.inFence, buf: p0.buf, target: 'zh-Hans', final: true, granularity: 'message' });
   assert.strictEqual(p1.flushes.length, 1, 'exactly one flush, at final');
-  assert.strictEqual(p1.flushes[0].entries.length, 4, 'heading + para + list item + closing para');
+  assert.strictEqual(p1.flushes[0].entries.filter((e) => !e.blank).length, 4, 'heading + para + list item + closing para');
   const dc = await renderSections(p1, OPTS);
   assert.strictEqual(dc,
-    '- item one\n\nSecond paragraph about retries.\n' +
-    '↳ 概览\n↳ 关于缓存的第一段。\n  ↳ 项目一\n↳ 关于重试的第二段。',
-    'one grouped block at the end; heading prefix demoted in the displaced block; list keeps indent');
+    '- item one\n\nSecond paragraph about retries.\n\n' +
+    '↳ 概览\n\n  关于缓存的第一段。\n\n  项目一\n\n  关于重试的第二段。',
+    'one grouped block: single ↳, aligned continuation, original blanks preserved');
 
   // Same lines in section mode flush 3 times (heading, paragraph, list+para) —
   // proves granularity actually changes behavior.

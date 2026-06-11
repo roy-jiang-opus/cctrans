@@ -63,11 +63,17 @@ Built on the native **MessageDisplay hook**. No npm dependencies (Node ≥18 glo
   deferred past list items / final), never delta-anchored — delta chunking is arbitrary
   (probe-verified: same reply, 3 deltas one run, 5 the next), and text-anchored splices
   are what make repaint replay byte-identical. Headings close their own section (a
-  displaced `## ↳ 译` renders as a REAL heading below the block it titles — probe-verified);
-  in displaced grouped blocks heading/quote prefixes are demoted to plain `↳` (uniform
-  quote runs keep `> `). Translation stays per-LINE, so both modes share the sha1 cache
-  and backend prompts are untouched. The trailing `''` from split('\n') is the delta's
-  trailing-\n encoding, NOT a blank line (all non-final deltas end with \n; final never does).
+  displaced `## ↳ 译` renders as a REAL heading below the block it titles — probe-verified).
+  RENDERING of a flush: a SINGLE prose line keeps the tight line-mode pairing under its
+  English (heading `## ↳`, list `  ↳`, quote `> ↳`). A GROUPED block (a list, a multi-
+  paragraph message-mode run, anything with an internal blank) is set off by a LEADING BLANK
+  line and carries ONE `↳` on its first line, later lines aligned under it (marker-width
+  indent), with the original blank lines PRESERVED between them (message mode records blanks
+  in the buffer as `{blank:true}` entries so the ZH block mirrors the source paragraphs; the
+  pendingChars reduce must skip blank entries — they have no `content`). Translation stays
+  per-LINE, so both modes share the sha1 cache and backend prompts are untouched. The trailing
+  `''` from split('\n') is the delta's trailing-\n encoding, NOT a blank line (all non-final
+  deltas end with \n; final never does). Verified live on CC 2.1.172 (section list + message).
   DISPLAY (`cctrans display append|replace`, default append): replace shows the translation IN
   PLACE of the English (`prefix + zh` — real bullet/heading, no ↳ marker) instead of pair()'s
   EN+↳ZH. Replace is LINE-MODE ONLY — section/message stream the English first by design and

@@ -66,7 +66,10 @@ async function run() {
   // Heading directly followed by a list (no blank): the heading closes its own
   // section — its ZH stays under it instead of displacing below the list.
   r = await render('## Steps\n- item one\n- item two\n\n');
-  assert.strictEqual(r.dc, '## Steps\n## ↳ 步骤\n- item one\n- item two\n  ↳ 项目一\n  ↳ 项目二\n\n');
+  // heading is a single-line section (tight under its English); the 2-item list
+  // is a GROUPED block — a leading blank, ONE ↳ on the first line, the rest
+  // aligned under it.
+  assert.strictEqual(r.dc, '## Steps\n## ↳ 步骤\n- item one\n- item two\n\n↳ 项目一\n  项目二\n\n');
 
   // A fence opening mid-delta closes the section; code passes through.
   r = await render('Here is the fix:\n```bash\ngit rebase main\n```\n\n');
@@ -87,7 +90,7 @@ async function run() {
   assert.strictEqual(r0.planned.buf.length, 2);
   const r1 = await render(d1, { buf: r0.planned.buf, final: true });
   assert.strictEqual(r1.dc,
-    '- Prefer the batch API\n  ↳ 启用缓存\n  ↳ 设置较短的超时\n  ↳ 优先使用批量 API\n\nRestart the session afterwards.\n↳ 之后请重启会话。');
+    '- Prefer the batch API\n\n↳ 启用缓存\n  设置较短的超时\n  优先使用批量 API\n\nRestart the session afterwards.\n↳ 之后请重启会话。');
 
   // Chunking invariance (repaint safety): the same text processed as one final
   // delta must equal the concatenation of the per-delta outputs above.

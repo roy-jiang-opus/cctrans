@@ -292,7 +292,7 @@ function planSections(rawDelta, opts) {
   const flushes = [];        // prose-section flushes
   const tableFlushes = [];   // {pos, lines} translated-table inserts
   let pending = (opts.buf || []).slice();
-  let pendingChars = pending.reduce((n, e) => n + e.content.length, 0);
+  let pendingChars = pending.reduce((n, e) => n + (e.content ? e.content.length : 0), 0);
   let tableBuf = (opts.tableBuf || []).slice();
   const flush = () => {
     if (pending.length) { flushes.push({ pos: out.length, entries: pending }); pending = []; pendingChars = 0; }
@@ -323,6 +323,10 @@ function planSections(rawDelta, opts) {
     }
     if (p.kind === 'blank') {
       if (!terminalArtifact && !wholeMessage) flush();
+      // In message mode a blank doesn't close the section, but record it in the
+      // buffer (no leading/double blanks) so the grouped ZH block can mirror the
+      // original paragraph breaks instead of becoming one undivided wall.
+      else if (wholeMessage && !terminalArtifact && pending.length && !pending[pending.length - 1].blank) pending.push({ blank: true });
       out.push(p.line);
       continue;
     }
@@ -346,25 +350,40 @@ async function renderSections(planned, opts) {
   if (!planned.flushes.length && !tableFlushes.length) return null;
 
   const contents = [];
-  for (const f of planned.flushes) for (const e of f.entries) contents.push(e.content);
+  for (const f of planned.flushes) for (const e of f.entries) if (!e.blank) contents.push(e.content);
   const zh = contents.length
     ? await translateLines(contents, { target: opts.target, backend: opts.backend, model: opts.model, timeoutMs: opts.timeoutMs })
     : [];
 
+  // Continuation lines in a grouped block align under the marker (so the whole
+  // block reads as one translation with a single ↳, not a ↳ on every line).
+  const cont = ' '.repeat([...marker].length);
   let k = 0;
   const blocks = [];
   for (const f of planned.flushes) {
-    // Single-line sections keep line-mode structure; a uniform quote run keeps
-    // its "> " (the block continues the same blockquote). Only mixed grouped
-    // blocks demote structure prefixes.
-    const grouped = f.entries.length > 1;
-    const allQuote = grouped && f.entries.every((e) => e.block === 'quote');
-    const blockLines = [];
+    // A single prose line keeps the tight line-mode pairing under its English
+    // (heading "## ↳", list "  ↳", quote "> ↳"). A GROUPED block (a list, a
+    // multi-paragraph message-mode run, anything with an internal blank) is set
+    // off by a leading blank line and carries ONE ↳ on its first line, with
+    // later lines aligned under it and original blank lines preserved.
+    const proseCount = f.entries.reduce((n, e) => n + (e.blank ? 0 : 1), 0);
+    const grouped = proseCount > 1 || f.entries.some((e) => e.blank);
+    const allQuote = grouped && f.entries.every((e) => e.blank || e.block === 'quote');
+    const lines = [];
+    let first = true;
     for (const e of f.entries) {
+      if (e.blank) { lines.push(''); continue; }
       const t = zh[k++];
-      if (t && t.trim() && t.trim() !== e.content.trim()) blockLines.push(zhLineFor(e, t, marker, grouped && !allQuote));
+      if (!(t && t.trim() && t.trim() !== e.content.trim())) continue; // identity/failed: leave the English
+      const z = t.trim();
+      if (!grouped) lines.push(zhLineFor(e, t, marker, false)); // single line: keep structure
+      else if (allQuote) lines.push('> ' + (first ? marker : '') + z); // stay in the blockquote
+      else lines.push((first ? marker : cont) + z);
+      first = false;
     }
-    if (blockLines.length) blocks.push({ pos: f.pos, lines: blockLines });
+    while (lines.length && lines[0] === '') lines.shift();
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    if (lines.length) blocks.push({ pos: f.pos, lines: grouped ? ['', ...lines] : lines });
   }
   // Translated-table copies, appended after their source table (separated by a
   // blank line so CommonMark parses them as a new table).

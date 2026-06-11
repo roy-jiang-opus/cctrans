@@ -11,6 +11,14 @@ Release notes are also published on
 
 ### Changed
 
+- **Cleaner grouped translations in section/message mode.** A list (or any
+  multi-line block) now shows a blank line between the English and its
+  translation and carries a single `↳` for the whole block instead of one on
+  every line, with the lines aligned under it. In message mode the original
+  paragraph blank lines are preserved in the translation (they used to be lost
+  — and a long multi-paragraph message-mode reply could drop all but the last
+  paragraph's translation; both fixed). Single-line paragraphs are unchanged.
+
 - **Setup is now a back/forward wizard.** `cctrans setup` (and the prompts
   during `cctrans install`) let you step back with `←` to change an earlier
   answer (choices preserved) and end on a review screen where you can jump to
